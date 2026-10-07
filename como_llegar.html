@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busya - ¿Cómo Llegar?</title>
+    <link rel="stylesheet" href="estilos/style.css">
+    <link rel="icon" href="autobus-escolar.ico" type="image/x-icon">
+
+    <!-- 1. Leaflet CSS y JS Core -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- 2. Leaflet Routing Machine CSS y JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.min.js"></script>
+
+    <!-- 3. CDN PolylineDecorator -->
+    <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
+    
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4HNJ40EJJG"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-4HNJ40EJJG');
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-top">
+                <button class="back-btn" onclick="volverAlInicio()">⬅ Volver</button>
+            </div>
+            <h1>Planifica tu Viaje</h1>
+            
+            <div class="panel-busqueda-viaje">
+                
+                <!-- Buscador Integrado 100% Gratuito -->
+                <div class="grupo-control" style="position: relative; z-index: 1000;">
+                    <label for="buscador-lugares">🔍 Buscar lugar o parada:</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="buscador-lugares" oninput="ejecutarBusquedaEnTiempoReal()" autocomplete="off" placeholder="Ej: Plaza San Martin, Supermercado..." style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                        <button onclick="ejecutarBusqueda()" style="padding: 8px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">Buscar</button>
+                    </div>
+                    <ul id="resultados-busqueda" style="color: black; list-style: none; padding: 0; margin: 0; position: absolute; width: 100%; top: 65px; max-height: 250px; overflow-y: auto; background: white; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);"></ul>
+                </div>
+
+                <div class="grupo-control">
+                    <label for="select-linea">1. Selecciona la línea:</label>
+                    <select id="select-linea" onchange="alCambiarLinea(this.value)">
+                        <option value="" disabled selected>-- Elige una línea --</option>
+                        <option value="lineaa">Línea A</option>
+                        <option value="lineae">Línea E</option>
+                        <option value="lineaeste">Línea Zona Este</option>
+                        <option value="lineaoeste">Línea Zona Oeste</option>
+                    </select>
+                </div>
+
+                <div class="grupo-control">
+                    <label for="select-destino">2. ¿A dónde querés ir?:</label>
+                    <select id="select-destino" disabled onchange="alSeleccionarDestino()">
+                        <option value="" disabled selected>-- Primero selecciona línea --</option>
+                    </select>
+                </div>
+
+                <div class="grupo-control">
+                    <label for="select-origen">3. Parada de subida (Origen):</label>
+                    <select id="select-origen" disabled onchange="alSeleccionarOrigen()">
+                        <option value="" disabled selected>-- Primero selecciona destino --</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <!-- Modal Sugerencia Parada -->
+        <div id="modal-sugerencia-parada" class="modal-estudiante-overlay hidden" onclick="cerrarModalSugerencia(event)">
+            <div class="modal-estudiante-content" style="max-width: 400px; text-align: center;">
+                <div class="modal-estudiante-icono">📍</div>
+                <h3>¿Usar parada más cercana?</h3>
+                <p id="modal-sugerencia-texto" style="font-size: 0.95rem; color: #475569; margin: 15px 0;">
+                    ¿Querés que te sugiramos la parada de origen más cercana a tu posición actual?
+                </p>
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                    <button class="linea-card" onclick="procesarRespuestaSugerencia(false)" style="background-color: #64748b; color: white; border: none; justify-content: center; flex: 1;">
+                        Manual
+                    </button>
+                    <button class="linea-card" onclick="procesarRespuestaSugerencia(true)" style="background-color: #2e7d32; color: white; border: none; justify-content: center; flex: 1;">
+                        Usar GPS ➔
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <main class="content-container">
+            <!-- Contenedor del Mapa con botones flotantes -->
+            <div id="contenedor-mapa-wrapper" class="relative width-full">
+                
+                <!-- Botón para expandir/pantalla completa -->
+                <button id="btn-expandir-mapa" onclick="alternarModoMapa(true)" class="btn-flotante-mapa btn-expandir">
+                    🗺️ Expandir Mapa
+                </button>
+
+                <!-- Botón superior para volver al planificador -->
+                <button id="btn-volver-planificador" onclick="alternarModoMapa(false)" class="btn-flotante-mapa btn-volver hidden">
+                    🔙 Volver al Planificador
+                </button>
+
+                <!-- El div único de Leaflet donde se renderiza el mapa -->
+                <div id="map-principal" style="height: 400px; width: 100%;"></div>
+
+                <!-- Panel flotante inferior para las instrucciones/resumen del viaje en modo expandido -->
+                <div id="panel-instrucciones-inferior" class="panel-inferior-flotante hidden">
+                    <div id="resumen-viaje-inferior"></div>
+                </div>
+            </div>
+
+            <!-- Información Adicional e Itinerario -->
+            <section class="mapa-info-adicional">
+                <h3>⏱ Resumen del Trayecto</h3>
+                <div id="resumen-viaje" class="tarjeta-resumen">
+                    <p style="color: #64748b; text-align: center;">Selecciona una línea para comenzar a planificar tu recorrido.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: Aviso de Caminar -->
+    <div id="modal-caminar" class="modal-estudiante-overlay hidden" onclick="document.getElementById('modal-caminar').classList.add('hidden')">
+        <div class="modal-estudiante-content" style="max-width: 400px; text-align: center;" onclick="event.stopPropagation()">
+            <button class="modal-estudiante-cerrar" onclick="document.getElementById('modal-caminar').classList.add('hidden')">×</button>
+            <div class="modal-estudiante-icono" style="margin-bottom: 10px;">🚶</div>
+            <h3 style="margin-bottom: 10px;">¡Estás muy cerca!</h3>
+            <p id="modal-caminar-texto" style="font-size: 0.95rem; color: #475569; margin: 15px 0; line-height: 1.5;">
+                <!-- El texto se inyecta desde JavaScript -->
+            </p>
+            <button class="linea-card" onclick="document.getElementById('modal-caminar').classList.add('hidden')" style="background-color: #f59e0b; color: white; border: none; justify-content: center; width: 100%; margin-top: 15px; font-weight: bold;">
+                Entendido
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts de la aplicación -->
+    <script src="script/como_llegar.js"></script>
+    <script src="panel/main.js" defer></script>
+    <script src="script/dias.js"></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+{
+  "linea": "Línea A",
+  "sectores": [
+    {
+      "zona": "Sector Sur / Barrio San Antonio y Alrededores",
+      "paradas": [
+        { "nombre": "Héroes de Malvinas y Vásquez", "lat": -33.708483, "lng": -65.430503 },
+        { "nombre": "Freites y Moretti", "lat": -33.709773, "lng": -65.432740 },
+        { "nombre": "Ibarlucea y Freites", "lat": -33.708790, "lng": -65.435438 },
+        { "nombre": "Aubert e Ibarlucea", "lat": -33.706984, "lng": -65.434811 },
+        { "nombre": "Aubert y T. Escudero", "lat": -33.704878, "lng": -65.433994 },
+        { "nombre": "Aubert y Valdez", "lat": -33.701865, "lng": -65.433097 },
+        { "nombre": "1 de Mayo y Aubert", "lat": -33.699622, "lng": -65.432403 }
+      ]
+    },
+    {
+      "zona": "Sector Este / B° La Ribera - Pirker - Rufino Barreiro",
+      "paradas": [
+        { "nombre": "P. Diaz y Uruguay", "lat": -33.699812, "lng": -65.438831 },
+        { "nombre": "Valdés y P. Diaz", "lat": -33.701406, "lng": -65.439493 },
+        { "nombre": "Pirker y Venezuela", "lat": -33.700464, "lng": -65.440244 },
+        { "nombre": "Pirker y 1 de Mayo", "lat": -33.698196, "lng": -65.439607 },
+        { "nombre": "Miguel B. Pastor y Pirker", "lat": -33.696227, "lng": -65.439146 },
+        { "nombre": "Miguel B. Pastor y Conc. Vinuesa", "lat": -33.695503, "lng": -65.441727 },
+        { "nombre": "Rufino Barreiro y Zoilo Concha", "lat": -33.695803, "lng": -65.444173 },
+        { "nombre": "Rufino Barreiro y Uruguay", "lat": -33.698088, "lng": -65.444791 },
+        { "nombre": "Uruguay y Gral. Guido", "lat": -33.696859, "lng": -65.447940 },
+        { "nombre": "Uruguay y Guayaquil", "lat": -33.695479, "lng": -65.454310 }
+      ]
+    },
+    {
+      "zona": "Sector Eje Av. Pringles / Guayaquil / Buenos Aires",
+      "paradas": [
+        { "nombre": "Av. Pringles y Bolivia", "lat": -33.694612, "lng": -65.457275 },
+        { "nombre": "Pringles y Chile", "lat": -33.693758, "lng": -65.460125 },
+        { "nombre": "Pringles y Perú", "lat": -33.692903, "lng": -65.462990 },
+        { "nombre": "Pringles y Ecuador", "lat": -33.692055, "lng": -65.465819 },
+        { "nombre": "Guayaquil y León Guillet", "lat": -33.691025, "lng": -65.453025 },
+        { "nombre": "Buenos Aires y Guayaquil", "lat": -33.689552, "lng": -65.452268 },
+        { "nombre": "Buenos Aires y Olloqui", "lat": -33.689920, "lng": -65.450597 },
+        { "nombre": "Esteban Güero y León Guillet", "lat": -33.691616, "lng": -65.450002 }
+      ]
+    },
+    {
+      "zona": "Sector Eje Corredor León Guillet",
+      "paradas": [
+        { "nombre": "Leon Guillet y 9 de Julio", "lat": -33.689146, "lng": -65.462708 },
+        { "nombre": "León Guillet e Italia", "lat": -33.689654, "lng": -65.460460 },
+        { "nombre": "León Guillet y Brasil", "lat": -33.690119, "lng": -65.458405 },
+        { "nombre": "León Guillet y Europa", "lat": -33.690570, "lng": -65.456308 },
+        { "nombre": "Europa y León Guillet", "lat": -33.683875, "lng": -65.486405 },
+        { "nombre": "León Guillet y Europa", "lat": -33.683457, "lng": -65.487853 },
+        { "nombre": "León Guillet y Francia", "lat": -33.681942, "lng": -65.492315 },
+        { "nombre": "León Guillet y Chile", "lat": -33.680488, "lng": -65.496657 },
+        { "nombre": "León Guillet y Perú", "lat": -33.679157, "lng": -65.500624 },
+        { "nombre": "León Guillet y Ecuador", "lat": -33.677810, "lng": -65.504616 },
+        { "nombre": "León Guillet y Bolivia", "lat": -33.676518, "lng": -65.508481 },
+        { "nombre": "León Guillet y Brasil", "lat": -33.675232, "lng": -65.512323 },
+        { "nombre": "León Guillet y Paraguay", "lat": -33.673950, "lng": -65.516144 },
+        { "nombre": "León Guillet y Uruguay", "lat": -33.672695, "lng": -65.519878 }
+      ]
+    },
+    {
+      "zona": "Sector Eje General Paz (Centro - Norte)",
+      "paradas": [
+        { "nombre": "Gral Paz e Yrigoyen", "lat": -33.687874, "lng": -65.464605 },
+        { "nombre": "Gral Paz y Tucumán", "lat": -33.686057, "lng": -65.464039 },
+        { "nombre": "Gral Paz y Édison", "lat": -33.684168, "lng": -65.463433 },
+        { "nombre": "Gral Paz y Rafael Cortez", "lat": -33.682334, "lng": -65.462902 },
+        { "nombre": "Gral Paz y Córdoba", "lat": -33.680626, "lng": -65.462359 },
+        { "nombre": "Gral Paz y Necochea", "lat": -33.678801, "lng": -65.461844 },
+        { "nombre": "Gral Paz y Sarmiento", "lat": -33.677009, "lng": -65.461270 },
+        { "nombre": "General Paz y Maipu", "lat": -33.675004, "lng": -65.460745 },
+        { "nombre": "Gral Paz y Madre Cabrini", "lat": -33.671772, "lng": -65.459762 },
+        { "nombre": "Gral Paz y Corrientes", "lat": -33.669777, "lng": -65.459059 },
+        { "nombre": "Gral Paz y Paraguay", "lat": -33.667991, "lng": -65.458577 },
+        { "nombre": "Gral Paz y Santa Fe", "lat": -33.666187, "lng": -65.458051 },
+        { "nombre": "Gral Paz y Vte. Dupuy", "lat": -33.664449, "lng": -65.457608 }
+      ]
+    },
+    {
+      "zona": "Sector Norte / Zavala Ortiz - Los Álamos",
+      "paradas": [
+        { "nombre": "Zavala Ortiz y San Martín", "lat": -33.663944, "lng": -65.456173 },
+        { "nombre": "Zavala Ortiz y Suipacha", "lat": -33.664377, "lng": -65.454178 },
+        { "nombre": "Los Álamos y Carlos Pellegrini", "lat": -33.658074, "lng": -65.452755 },
+        { "nombre": "Los Álamos y Mtro. Berrondo", "lat": -33.656145, "lng": -65.452187 },
+        { "nombre": "Los Álamos y Olagaray", "lat": -33.653631, "lng": -65.451371 },
+        { "nombre": "Los Álamos y San Roque", "lat": -33.648955, "lng": -65.449789 }
+      ]
+    },
+    {
+      "zona": "Sector Oeste / Héroes de Malvinas - Aubert",
+      "paradas": [
+        { "nombre": "Héroes de Malvinas y Gazari", "lat": -33.689998, "lng": -65.471582 },
+        { "nombre": "Héroes de Malvinas y Montevideo", "lat": -33.689054, "lng": -65.474212 },
+        { "nombre": "Aubert y Valdez", "lat": -33.686991, "lng": -65.479673 },
+        { "nombre": "Aubert y Europa", "lat": -33.685796, "lng": -65.482805 }
+      ]
+    }
+  ]
+  
+}
+
