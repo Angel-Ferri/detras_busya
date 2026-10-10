@@ -6,7 +6,7 @@
 }
 
 body {
-    background-color: #f4f6f9;
+    background-color: #3f6bac;
     color: #333;
     display: flex;
     justify-content: center;
@@ -14,6 +14,7 @@ body {
     min-height: 100vh;
     padding: 15px;
 }
+
 /* Paradas oficiales */
 #paradas-select option.parada-oficial {
     color: black;
@@ -63,24 +64,33 @@ body {
 }
 
 /* Encabezado */
+/* Centra todo el contenido de la cabecera */
 .app-header {
-    background: linear-gradient(135deg, #1e3c72, #2a5298);
-    color: white;
-    padding: 30px 20px;
     text-align: center;
-    border-bottom-left-radius: 20px;
-    border-bottom-right-radius: 20px;
 }
 
+/* Flexbox para alinear la imagen y el texto del logo en una sola línea */
 .logo {
+    display: flex;
+    align-items: center;     /* Alinea verticalmente la imagen con el texto "Busya" */
+    justify-content: center; /* Centra la combinación de imagen + texto en la pantalla */
     font-size: 3rem;
     font-weight: bold;
     margin-bottom: 5px;
 }
 
+.logo-header {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    margin-right: 12px;      /* Espacio entre el círculo y la palabra Busya */
+    object-fit: cover;       /* Asegura que la imagen mantenga su proporción */
+}
+
 .subtitle {
-    font-size: 1.25rem;
-    opacity: 0.9;
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
 }
 
 /* Cuerpo de selección */
@@ -223,7 +233,7 @@ h2 {
 .linea-card {
     display: flex;
     align-items: center;
-    background: #fafafa;
+    background: #e2e2e2;
     border: 2px solid #eef0f3;
     border-radius: 15px;
     padding: 15px;
@@ -401,16 +411,6 @@ h2 {
     padding: 0;
     box-sizing: border-box;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-body {
-    background-color: #f4f6f9;
-    color: #333;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-    padding: 15px;
 }
 
 .app-container {
@@ -1163,7 +1163,7 @@ h2 { font-size: 1.1rem; margin-bottom: 12px; color: #555; }
     position: absolute;
     z-index: 1000;
     padding: 10px 16px;
-    background-color: #2563eb;
+    background-color: #164bbe;
     color: #ffffff;
     font-weight: bold;
     border: none;

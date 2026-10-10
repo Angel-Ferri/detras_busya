@@ -7,6 +7,8 @@ let nombreLineaActiva = "";
 let datosParadasProcesados = [];
 let datosGeograficos = null;
 
+
+
 document.addEventListener("DOMContentLoaded", iniciarParadas);
 
 // ============================================================
@@ -308,6 +310,13 @@ function mostrarCartelRecomendacion(parada, hora, minutos) {
     // Evitar mostrar cartel si la hora es null o inválida
     if (!hora || hora === "null" || minutos < 0) return;
 
+    // 1. Eliminar cualquier cartel anterior para que no se superpongan
+    const cartelAnterior = document.querySelector(".cartel-sugerencia");
+    if (cartelAnterior) {
+        cartelAnterior.remove();
+    }
+
+    // 2. Crear el nuevo cartel con la parada actualizada
     const cartel = document.createElement("div");
     cartel.className = "cartel-sugerencia";
     cartel.innerHTML = `
@@ -322,12 +331,12 @@ function mostrarCartelRecomendacion(parada, hora, minutos) {
     `;
     document.body.appendChild(cartel);
 
-    // Eliminar automáticamente después de 15 segundos
+    // 3. Eliminar automáticamente después de 8 segundos (o el tiempo que prefieras)
     setTimeout(() => {
         if (cartel && cartel.parentElement) {
             cartel.remove();
         }
-    }, 15000);
+    }, 8000);
 }
 
 

@@ -21,7 +21,7 @@
 <body>
     <div class="app-container">
         <header class="app-header">
-            <div class="logo">🚌 Busya</div>
+            <div class="logo"><img class="logo-header" src="estilos/img/logo.jpeg"> Busya</div>
             <p class="subtitle">¿Qué colectivo vas a tomar hoy?<br>V14</p>
         </header>
 
@@ -84,6 +84,11 @@
             <a href="chofer.html" class="driver-access-link">⚙️ Panel de Control</a>
         </footer>
     </div>
+
+<!-- Botón Flotante Advertencia (Limitaciones) -->
+    <button class="boton-advertencia-circular" onclick="abrirModalAviso()" title="Ver limitaciones de la app" style="position: fixed; bottom: 20px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background-color: #f59e0b; border: none; font-size: 24px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); cursor: pointer; z-index: 9999; display: flex; justify-content: center; align-items: center;">
+        ⚠️
+    </button>
 
     <!-- MODAL: Pase Estudiantil -->
     <div id="modal-estudiante" class="modal-estudiante-overlay hidden" onclick="cerrarModalEstudiante(event)">
@@ -167,6 +172,52 @@
             }
         }
     </script>
+
+    <div id="modal-aviso-limitaciones" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+    <div style="background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 450px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); text-align: center;">
+        <h2 style="margin-top: 0; color: #dc2626; font-size: 1.5rem;">⚠️ Aviso Importante</h2>
+        <p style="color: #475569; font-size: 0.95rem; text-align: left; margin-bottom: 15px;">
+            Nuestra aplicación se encuentra en desarrollo. Por favor, tené en cuenta las siguientes limitaciones:
+        </p>
+        <ul style="color: #475569; font-size: 0.9rem; text-align: left; padding-left: 20px; margin-bottom: 25px;">
+            <li style="margin-bottom: 10px;"><b>Faltan lugares:</b> Es posible que no encuentres algunas tiendas, locales o cruces de calles en el buscador.</li>
+            <li style="margin-bottom: 10px;"><b>Faltan paradas:</b> Aún no hemos cargado el 100% de las paradas en el mapa.</li>
+            <li style="margin-bottom: 10px;"><b>Horarios simulados:</b> No contamos con acceso al GPS real de los colectivos. Sus ubicaciones y horarios en el mapa son simulados en base a cálculos nuestros y pueden ser imprecisos.</li>
+            <li><b>Rutas inexactas:</b> Dependiendo de a dónde vayas, existe la posibilidad de que el algoritmo te marque un viaje o transbordo erróneo.</li>
+        </ul>
+        <button id="btn-cerrar-aviso" style="background: #2563eb; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; width: 100%;">
+            Entendido
+        </button>
+    </div>
+</div>
+
+<script>
+// Lógica para mostrar el cartel solo la primera vez
+document.addEventListener('DOMContentLoaded', () => {
+    const modalAviso = document.getElementById('modal-aviso-limitaciones');
+    const btnCerrarAviso = document.getElementById('btn-cerrar-aviso');
+
+    // Comprobamos si en la memoria del navegador YA existe el registro de que vio el cartel
+    if (!localStorage.getItem('avisoBusyaVisto')) {
+        // Si no existe, cambiamos el display para que se muestre en pantalla
+        modalAviso.style.display = 'flex';
+    }
+
+    if (btnCerrarAviso) {
+        btnCerrarAviso.addEventListener('click', () => {
+            // Ocultamos el cartel
+            modalAviso.style.display = 'none';
+            // Guardamos el dato en localStorage para que no vuelva a molestar en el futuro
+            localStorage.setItem('avisoBusyaVisto', 'true');
+        });
+    }
+});
+
+// Modal Aviso de Limitaciones
+        function abrirModalAviso() {
+            document.getElementById('modal-aviso-limitaciones').style.display = 'flex';
+        }
+</script>
 
     <!-- Scripts de la aplicación -->
     <script src="script/dias.js"></script>
