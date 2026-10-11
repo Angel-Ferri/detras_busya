@@ -1213,6 +1213,8 @@ h2 { font-size: 1.1rem; margin-bottom: 12px; color: #555; }
     overflow-y: auto;
 }
 
+
+
 /* Clase dinámica para maximizar a casi toda la pantalla */
 body.modo-mapa-completo #contenedor-mapa-wrapper {
     position: fixed !important;
@@ -1241,3 +1243,138 @@ body.modo-mapa-completo footer {
     display: none !important;
 }
 
+/* ==========================================
+   ESTILOS PARA BUSYA - CÓMO LLEGAR
+========================================== */
+
+/* Clase de utilidad para ocultar elementos */
+.hidden {
+    display: none !important;
+}
+
+/* Diseño de los pasos del itinerario */
+.paso-itinerario {
+    background: #f8fafc;
+    border-left: 4px solid #3b82f6;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    color: #334155;
+}
+
+/* Icono especial transparente para el transbordo de la Escala L2 */
+.custom-div-icon {
+    background: transparent;
+    border: none;
+}
+
+/* Icono del colectivo simulado (Emoji Bus) */
+.custom-emoji-bus {
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ==========================================
+   MODO MAPA EXPANDIDO (PANTALLA COMPLETA)
+========================================== */
+body.modo-mapa-completo {
+    overflow: hidden; /* Evita que la página haga scroll atrás del mapa */
+}
+
+body.modo-mapa-completo #map-principal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important; /* Lo pone por encima de todo */
+    border-radius: 0 !important;
+}
+
+/* Panel flotante de instrucciones cuando el mapa está en pantalla completa */
+#panel-instrucciones-inferior {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 400px;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    z-index: 10000;
+    max-height: 40vh;
+    overflow-y: auto;
+}
+
+/* Botón flotante para salir de pantalla completa */
+#btn-volver-planificador {
+position: fixed;
+    top: 20px; /* Distancia desde arriba */
+    
+    /* MAGIA PARA CENTRARLO */
+    left: 50%;
+    transform: translateX(-50%);
+    
+    z-index: 10000; /* Siempre por encima del mapa */
+    
+    /* Estilos visuales (colores, bordes y sombras) */
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    cursor: pointer;
+    text-align: center;
+}
+
+/* ==========================================
+   BOTÓN FLOTANTE CIRCULAR (RASTREO COLECTIVOS)
+========================================== */
+.btn-flotante-colectivos {
+    /* Posicionamiento fijo independiente del resto de la página */
+    position: fixed;
+    bottom: 30px; /* Separación desde abajo */
+    right: 30px;  /* Separación desde la derecha */
+    z-index: 9999; /* Garantiza que esté por encima del mapa y otros paneles */
+
+    /* Forma circular perfecta */
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    
+    /* Diseño (Borde, fondo y sombra flotante) */
+    background-color: #ffffff;
+    border: 3px solid #3b82f6; 
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    
+    /* Centrado del emoji adentro del botón */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px; 
+    
+    /* Animaciones fluidas */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 0;
+    margin: 0;
+}
+
+/* Efecto al pasar el mouse por encima (Hover) */
+.btn-flotante-colectivos:hover {
+    transform: scale(1.1); 
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* Efecto al hacer clic (Active) */
+.btn-flotante-colectivos:active {
+    transform: scale(0.95); 
+}

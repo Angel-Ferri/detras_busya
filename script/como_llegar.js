@@ -21,7 +21,9 @@ let marcadorDestinoFinalL2 = null;
 let marcadorTransbordoL2 = null;
 let marcadorDestinoBuscado = null;
 
-
+let rastreoActivo = false; // El rastreo de colectivos inicia apagado
+let marcadoresColectivos = [];
+let bucleSimulacion = null;
 
 // --- Iconos ---
 const iconoUsuarioGPS = L.icon({
@@ -84,7 +86,6 @@ function obtenerUbicacionUsuario() {
             },
             err => {
                 console.warn('Usando ubicación por defecto:', err.message);
-                // 2. Fija tu ubicación GPS simulada en La Pedrera si falla el GPS real
                 ubicacionUsuario = { lat: -33.67451974632388, lng: -65.46229376889399 };
                 mostrarUsuario();
             },
@@ -100,7 +101,6 @@ function mostrarUsuario() {
     mapa.setView([ubicacionUsuario.lat, ubicacionUsuario.lng], 15);
     marcadorUsuario = L.marker([ubicacionUsuario.lat, ubicacionUsuario.lng], { icon: iconoUsuarioGPS })
         .addTo(mapa)
-        // Actualizamos el popup para indicar explícitamente el modo de viaje
         .bindPopup('<div style="text-align: center;">📍 <b>Tu posición</b><br>🚶 Modo a pie</div>')
         .openPopup();
     
@@ -163,7 +163,7 @@ function calcularHorarioEstimadoParada(keyLinea, indiceParada, minutosActuales) 
     if (horarios && horarios.horarios_fijos && horarios.horarios_fijos[parada.nombre]) {
         const horas = horarios.horarios_fijos[parada.nombre].map(obtenerMinutosDesdeCadena).sort((a, b) => a - b);
         const siguiente = horas.find(h => h >= minutosActuales) || horas[0];
-        return { horaEstimadaStr: convertirMinutosAHora(siguiente), minutosLlegada: siguiente, esInterpolado: false, referenciaAnterior: null, referenciaSiguiente: null };
+        return { horaEstimadaStr: convertirMinutosAHora(siguiente), minutosLlegada: siguiente, esInterpolado: false };
     }
 
     let idxAnterior = -1, idxSiguiente = -1;
@@ -175,7 +175,7 @@ function calcularHorarioEstimadoParada(keyLinea, indiceParada, minutosActuales) 
         const inicio = idxAnterior !== -1 ? idxAnterior : 0;
         for (let i = inicio; i < indiceParada; i++) distancia += calcularDistancia([paradas[i].lat, paradas[i].lng], [paradas[i + 1].lat, paradas[i + 1].lng]);
         const horaEstimada = minutosActuales + Math.round(distancia / 20 * 60);
-        return { horaEstimadaStr: convertirMinutosAHora(horaEstimada), minutosLlegada: horaEstimada, esInterpolado: true, referenciaAnterior: paradas[inicio].nombre, referenciaSiguiente: 'fin de línea' };
+        return { horaEstimadaStr: convertirMinutosAHora(horaEstimada), minutosLlegada: horaEstimada, esInterpolado: true };
     }
 
     let distanciaTotal = 0, distanciaHastaParada = 0;
@@ -190,7 +190,7 @@ function calcularHorarioEstimadoParada(keyLinea, indiceParada, minutosActuales) 
     const fraccion = distanciaTotal > 0 ? distanciaHastaParada / distanciaTotal : 0;
     const horaEstimada = Math.round(horaA + (horaB - horaA) * fraccion);
 
-    return { horaEstimadaStr: convertirMinutosAHora(horaEstimada), minutosLlegada: horaEstimada, esInterpolado: true, referenciaAnterior: paradas[idxAnterior].nombre, referenciaSiguiente: paradas[idxSiguiente].nombre };
+    return { horaEstimadaStr: convertirMinutosAHora(horaEstimada), minutosLlegada: horaEstimada, esInterpolado: true };
 }
 
 // --- Interacción con el UI ---
@@ -207,10 +207,11 @@ function alCambiarLinea(valorLinea) {
     if (!recorridoActual || !recorridoActual.paradas.length) { alert('Datos no disponibles.'); selDestino.disabled = true; return; }
 
     dibujarRecorridoColectivo(recorridoActual.recorrido);
-    dibujarRecorridoColectivo(recorridoActual.recorrido);
     
-    // Activa los colectivos asumiendo la hora actual
-    activarRastreoColectivos();
+    // Solo activa los colectivos si el usuario prendió el botón
+    if (rastreoActivo) {
+        activarRastreoColectivos();
+    }
 
     recorridoActual.paradas.forEach((parada, idx) => {
         let opt = document.createElement('option');
@@ -386,7 +387,6 @@ function limpiarMapa() {
     if (lineaTramoPolyline) { mapa.removeLayer(lineaTramoPolyline); lineaTramoPolyline = null; }
     if (decoradorFlechas) { mapa.removeLayer(decoradorFlechas); decoradorFlechas = null; }
     
-    // Vaciamos los puntos a pie antes de remover el control para evitar que queden líneas pegadas
     if (routingControlPie) { 
         routingControlPie.setWaypoints([]); 
         mapa.removeControl(routingControlPie); 
@@ -395,11 +395,8 @@ function limpiarMapa() {
     
     if (marcadorOrigenSugerido) { mapa.removeLayer(marcadorOrigenSugerido); marcadorOrigenSugerido = null; }
     if (marcadorDestinoSeleccionado) { mapa.removeLayer(marcadorDestinoSeleccionado); marcadorDestinoSeleccionado = null; }
-    
-    // BORRAMOS EL MARCADOR DEL DESTINO BUSCADO
     if (marcadorDestinoBuscado) { mapa.removeLayer(marcadorDestinoBuscado); marcadorDestinoBuscado = null; }
     
-    // --- BORRAR LOS RASTROS DE LA LÍNEA 2 (Transbordo) ---
     if (lineaL2FondoPolyline) { mapa.removeLayer(lineaL2FondoPolyline); lineaL2FondoPolyline = null; }
     if (lineaTramoL2Polyline) { mapa.removeLayer(lineaTramoL2Polyline); lineaTramoL2Polyline = null; }
     if (marcadorDestinoFinalL2) { mapa.removeLayer(marcadorDestinoFinalL2); marcadorDestinoFinalL2 = null; }
@@ -407,7 +404,7 @@ function limpiarMapa() {
 }
 
 // =====================================================
-// BUSCADOR INTELIGENTE (Nominatim / OpenStreetMap Gratis)
+// BUSCADOR INTELIGENTE Y RUTAS ÓPTIMAS
 // =====================================================
 
 let temporizadorBusqueda = null;
@@ -417,11 +414,11 @@ function ejecutarBusquedaEnTiempoReal() {
     const terminoInput = document.getElementById('buscador-lugares').value.trim();
     if (terminoInput.length < 3) { document.getElementById('resultados-busqueda').innerHTML = ''; return; }
     document.getElementById('resultados-busqueda').innerHTML = '<li style="padding: 10px; color: #666;">Buscando opciones...</li>';
-    // Aumentamos a 800ms para cuidar los límites del servidor gratuito de Nominatim
     temporizadorBusqueda = setTimeout(() => { ejecutarBusqueda(); }, 800); 
 }
 
 function normalizarTexto(texto) { return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
+
 function calcularDistanciaLetras(a, b) {
     if(a.length === 0) return b.length; if(b.length === 0) return a.length;
     let matriz = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
@@ -463,7 +460,6 @@ async function ejecutarBusqueda() {
 
     let lugaresEncontrados = [];
     try {
-        // Agregamos Villa Mercedes y restringimos a Argentina (countrycodes=ar) para precisión
         const queryFormateada = encodeURIComponent(terminoInput + ', Villa Mercedes, San Luis');
         const url = `https://nominatim.openstreetmap.org/search?format=json&q=${queryFormateada}&countrycodes=ar&limit=5`;
         const response = await fetch(url);
@@ -487,21 +483,18 @@ async function ejecutarBusqueda() {
         });
     }
 
-if (lugaresEncontrados.length > 0) {
+    if (lugaresEncontrados.length > 0) {
         const tituloLugares = document.createElement('li');
         tituloLugares.innerHTML = '<strong style="display:block; padding: 5px 10px; background:#f1f5f9; color:#475569; font-size: 0.8rem;">📍 LOCALES Y DIRECCIONES</strong>';
         contenedorResultados.appendChild(tituloLugares);
 
         lugaresEncontrados.forEach(lugar => {
-            // Extracción detallada desde la propiedad address si existe
             const addr = lugar.address || {};
             let nombreFormateado = '';
 
             if (addr.road && addr.house_number) {
-                // Si la API devuelve calle y altura específicas
                 nombreFormateado = `${addr.road} ${addr.house_number}`;
             } else if (lugar.display_name) {
-                // Formato alternativo tomando las dos primeras partes de la dirección
                 const partes = lugar.display_name.split(',');
                 nombreFormateado = partes.slice(0, 2).join(', ').trim();
             } else {
@@ -515,8 +508,6 @@ if (lugaresEncontrados.length > 0) {
             li.onmouseout = () => li.style.background = 'white';
             
             li.innerHTML = `<b>${nombreFormateado}</b> <br><small style="color:#64748b;">${descripcion || 'Villa Mercedes'}</small>`;
-            
-            // Enviar coordenadas exactas recibidas de Nominatim
             li.onclick = () => encontrarViajeMasOptimo(parseFloat(lugar.lat), parseFloat(lugar.lon), nombreFormateado); 
             contenedorResultados.appendChild(li);
         });
@@ -539,14 +530,6 @@ function seleccionarDestinoDesdeBuscador(lineaKey, paradaIndex, parada, limpiarI
 
 document.addEventListener('click', function(e) { if(!e.target.closest('.grupo-control')) document.getElementById('resultados-busqueda').innerHTML = ''; });
 
-// ==========================================
-// ALGORITMO DE RUTA ÓPTIMA
-// ==========================================
-
-
-// ==========================================
-// ALGORITMO DE RUTA ÓPTIMA
-// ==========================================
 
 function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
     document.getElementById('resultados-busqueda').innerHTML = '';
@@ -557,45 +540,42 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         return; 
     }
 
-    limpiarMapa(); // Limpiar dibujos y recorridos previos
+    limpiarMapa();
 
-    // ==========================================
-    // FASE 0: EVALUAR SI ESTÁ A MENOS DE 500M (IR A PIE)
-    // ==========================================
     let distDirecta = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [latDestino, lngDestino]);
     let metrosDirectos = Math.round(distDirecta * 1000);
+    let cuadrasAprox = Math.round(metrosDirectos / 100); // Calculamos las cuadras
 
-    if (distDirecta <= 0.5) { // 500 metros o menos
+    // Si está a 10 cuadras o menos (1.0 km), mostramos la recomendación de ir a pie
+    if (distDirecta <= 1.0) {
         let minCaminando = Math.max(1, Math.round(((distDirecta * 1.2) / 5) * 60));
 
-        // 1. Trazar ruta a pie directamente desde el GPS al destino
         trazarRutaAPie(ubicacionUsuario, [latDestino, lngDestino]);
 
-        // 2. Colocar marcador en el destino
         marcadorDestinoBuscado = L.marker([latDestino, lngDestino]).addTo(mapa)
-            .bindPopup(`📍 <b>${nombreLugar}</b><br>🚶 ¡Estás a solo ${metrosDirectos}m! Llegás caminando en ~${minCaminando} min.`)
+            .bindPopup(`📍 <b>${nombreLugar}</b><br>🚶 ¡Estás a solo ${cuadrasAprox} cuadras! Llegás caminando en ~${minCaminando} min.`)
             .openPopup();
 
-        // 3. Informar en el panel de itinerario
         document.getElementById('resumen-viaje').innerHTML = `
             <div class="paso-itinerario" style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 10px;">
-                <p>🚶 <b>¡Destino muy cercano!</b></p>
-                <p>Estás a unos <b>${metrosDirectos} metros</b> de <b>${nombreLugar}</b>.</p>
+                <p>🚶 <b>¡Destino cercano!</b></p>
+                <p>Estás a <b>${metrosDirectos} metros</b> (aprox. ${cuadrasAprox} cuadras) de <b>${nombreLugar}</b>.</p>
                 <p>Tiempo estimado a pie: <b>~${minCaminando} min</b>.</p>
             </div>
-            <p style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">No hace falta tomar colectivo para esta distancia.</p>
+            <p style="font-size: 0.95rem; font-weight: bold; color: #15803d; margin-top: 8px;">
+                💡 Te recomiendo ir caminando si es de menos de 10 cuadras.
+            </p>
         `;
 
-        mapa.setView([latDestino, lngDestino], 16);
-        return; // Finaliza la función sin buscar ni dibujar colectivos
+        mapa.setView([latDestino, lngDestino], 15);
+        return; 
     }
 
-    // ==========================================
-    // FASE 1: BUSCAR VIAJES DIRECTOS
-    // ==========================================
     let mejorViaje = null;
     let mejorPuntajeTotal = Infinity;
     const minutosAhora = new Date().getHours() * 60 + new Date().getMinutes();
+
+    // ... (el resto de la función FASE 1 y FASE 2 sigue exactamente igual hacia abajo) ...
 
     for (const keyLinea in datosLineasCargados) {
         const linea = datosLineasCargados[keyLinea];
@@ -648,9 +628,6 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         }
     }
 
-    // ==========================================
-    // FASE 2: BUSCAR VIAJES CON ESCALA MÁS CORTA
-    // ==========================================
     let buscarEscalas = true;
     if (mejorViaje && mejorViaje.metrosDestino <= 300) {
         buscarEscalas = false;
@@ -685,7 +662,6 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
                     for (let j = 0; j < destinoL2.idx; j++) {
                         let distInterseccion = calcularDistancia([L1.paradas[i].lat, L1.paradas[i].lng], [L2.paradas[j].lat, L2.paradas[j].lng]);
                         
-                        // Máximo 0.15 km (~150m) entre paradas de transbordo
                         if (distInterseccion <= 0.15) { 
                             let minCaminaInicio = Math.round((origenL1.dist) / 5 * 60);
                             let minEspera1 = 5; 
@@ -720,11 +696,7 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         }
     }
 
-    // ==========================================
-    // FASE 3: APLICAR RESULTADOS EN INTERFAZ
-    // ==========================================
     if (mejorViaje) {
-
         if (mejorViaje.tipo === 'directo') {
             document.getElementById('select-linea').value = mejorViaje.lineaKey;
             alCambiarLinea(mejorViaje.lineaKey); 
@@ -745,102 +717,12 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
             
             setTimeout(() => {
                 document.getElementById('select-destino').value = mejorViaje.L1.bajada.idx;
-                sugerenciaTemporal = { idxDestino: mejorViaje.L1.bajada.idx, cercana: { parada: mejorViaje.L1.origen.parada, index: mejorViaje.L1.origen.idx, distanciaKm: mejorViaje.L1.origen.dist } };
-                procesarRespuestaSugerencia(true); 
-
-                document.getElementById('resumen-viaje').innerHTML = `
-                    <div class="paso-itinerario"><p>1. 🚶 Camina hacia <b>${mejorViaje.L1.origen.parada.nombre}</b>.</p></div>
-                    <div class="paso-itinerario"><p>2. 🚌 Toma la <b>${mejorViaje.L1.nombre}</b> y bajate en <b>${mejorViaje.L1.bajada.parada.nombre}</b>.</p></div>
-                    <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 8px; margin: 5px 0; border-radius: 4px; font-size: 0.9rem;">
-                        🔄 <b>ESCALA:</b> Caminá ${mejorViaje.distEscala} metros hacia la parada <b>${mejorViaje.L2.subida.parada.nombre}</b>.
-                    </div>
-                    <div class="paso-itinerario"><p>3. 🚌 Tomá la <b style="color:#ef4444;">${mejorViaje.L2.nombre}</b> y bajate en <b>${mejorViaje.L2.destino.parada.nombre}</b>.</p></div>
-                    <div class="paso-itinerario"><p>4. 📍 Caminá ${mejorViaje.metrosDestino}m hasta tu destino final.</p></div>
-                    <p style="font-weight: bold; color: #2e7d32;">Tiempo total (Escala incl.): ~${mejorViaje.tiempoTotal} min.</p>
-                `;
-
-                // TRAMO DE RUTA DE L2
-                let datosL2 = datosLineasCargados[mejorViaje.L2.key];
-                let recorridoL2 = datosL2.recorrido;
-                let proyOrigenL2 = obtenerProyeccionEnRecorrido(recorridoL2, [mejorViaje.L2.subida.parada.lat, mejorViaje.L2.subida.parada.lng]);
-                let proyDestinoL2 = obtenerProyeccionEnRecorrido(recorridoL2, [mejorViaje.L2.destino.parada.lat, mejorViaje.L2.destino.parada.lng]);
-
-                let tramoCoordsL2 = [];
-                if (proyOrigenL2.indiceSegmento <= proyDestinoL2.indiceSegmento) {
-                    tramoCoordsL2.push(proyOrigenL2.puntoProyectado);
-                    for (let i = proyOrigenL2.indiceSegmento + 1; i <= proyDestinoL2.indiceSegmento; i++) tramoCoordsL2.push(recorridoL2[i]);
-                    tramoCoordsL2.push(proyDestinoL2.puntoProyectado);
-                } else {
-                    tramoCoordsL2.push(proyOrigenL2.puntoProyectado);
-                    for (let i = proyOrigenL2.indiceSegmento + 1; i < recorridoL2.length; i++) tramoCoordsL2.push(recorridoL2[i]);
-                    for (let i = 0; i <= proyDestinoL2.indiceSegmento; i++) tramoCoordsL2.push(recorridoL2[i]);
-                    tramoCoordsL2.push(proyDestinoL2.puntoProyectado);
-                }
-
-                lineaTramoL2Polyline = L.polyline(tramoCoordsL2, { color: '#ef4444', weight: 6, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }).addTo(mapa);
-
-                // PARADAS SOLO DEL TRAMO DE L2
-                const minutosAhoraL2 = new Date().getHours() * 60 + new Date().getMinutes();
-                const idxInicioL2 = mejorViaje.L2.subida.idx;
-                const idxFinL2 = mejorViaje.L2.destino.idx;
-
-                datosL2.paradas.forEach((parada, index) => {
-                    let enTramo = (idxInicioL2 <= idxFinL2) 
-                        ? (index >= idxInicioL2 && index <= idxFinL2)
-                        : (index >= idxInicioL2 || index <= idxFinL2);
-
-                    if (enTramo) {
-                        let marker = L.circleMarker([parada.lat, parada.lng], { 
-                            radius: 6, 
-                            color: '#991b1b', 
-                            fillColor: '#ef4444', 
-                            fillOpacity: 0.8 
-                        }).addTo(mapa);
-
-                        marker.on('click', () => {
-                            let lineaOriginal = recorridoActual;
-                            recorridoActual = datosL2;
-                            const horario = calcularHorarioEstimadoParada(datosL2.key, index, minutosAhoraL2);
-                            recorridoActual = lineaOriginal;
-
-                            let infoHtml = horario ? '<br><small>' + (horario.esInterpolado ? 'Horario estimado' : 'Horario programado') + '</small>' : '<br><i>No hay horarios.</i>';
-                            marker.bindPopup('<div style="text-align: center;"><b>🚏 Parada (' + datosL2.nombre + '):</b> ' + parada.nombre + infoHtml + '</div>').openPopup();
-                        });
-
-                        marcadoresParadas.push(marker);
-                    }
-                });
-
-                marcadorDestinoFinalL2 = L.marker([latDestino, lngDestino]).addTo(mapa).bindPopup(`📍 <b>Destino Final:</b> ${nombreLugar}`).openPopup();
-
-                marcadorTransbordoL2 = L.marker([mejorViaje.L2.subida.parada.lat, mejorViaje.L2.subida.parada.lng], { 
-                    icon: L.divIcon({
-                        className: 'custom-div-icon',
-                        html: `<div style='background-color:#ef4444; color:white; padding:5px 10px; border-radius:10px; font-weight:bold; font-size:12px; white-space:nowrap; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);'>🔄 Subí a ${mejorViaje.L2.nombre}</div>`,
-                        iconSize: [120, 30],
-                        iconAnchor: [60, 35]
-                    })
-                }).addTo(mapa);
-
-                let bounds = lineaTramoPolyline.getBounds();
-                bounds.extend(lineaTramoL2Polyline.getBounds());
-                mapa.fitBounds(bounds, { padding: [50, 50] });
-
-            }, 200);
-} else if (mejorViaje.tipo === 'transbordo') {
-            // 1. Cargamos por defecto la primera línea (L1)
-            document.getElementById('select-linea').value = mejorViaje.L1.key;
-            alCambiarLinea(mejorViaje.L1.key);
-            
-            setTimeout(() => {
-                document.getElementById('select-destino').value = mejorViaje.L1.bajada.idx;
                 sugerenciaTemporal = { 
                     idxDestino: mejorViaje.L1.bajada.idx, 
                     cercana: { parada: mejorViaje.L1.origen.parada, index: mejorViaje.L1.origen.idx, distanciaKm: mejorViaje.L1.origen.dist } 
                 };
                 procesarRespuestaSugerencia(true); 
 
-                // 2. Mostramos el itinerario con un botón interactivo para confirmar si se quiere dibujar la escala
                 document.getElementById('resumen-viaje').innerHTML = `
                     <div class="paso-itinerario"><p>1. 🚶 Camina hacia <b>${mejorViaje.L1.origen.parada.nombre}</b>.</p></div>
                     <div class="paso-itinerario"><p>2. 🚌 Toma la <b>${mejorViaje.L1.nombre}</b> y bajate en <b>${mejorViaje.L1.bajada.parada.nombre}</b>.</p></div>
@@ -857,7 +739,6 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
                     <p style="font-weight: bold; color: #2e7d32;">Tiempo total (Escala incl.): ~${mejorViaje.tiempoTotal} min.</p>
                 `;
 
-                // 3. Listener para dibujar la segunda línea SOLO si el usuario lo confirma activamente
                 const btnEscala = document.getElementById('btn-confirmar-escala');
                 if (btnEscala) {
                     btnEscala.onclick = () => {
@@ -896,7 +777,6 @@ function dibujarTramoEscalaL2(mejorViaje, latDestino, lngDestino, nombreLugar) {
 
     lineaTramoL2Polyline = L.polyline(tramoCoordsL2, { color: '#ef4444', weight: 6, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }).addTo(mapa);
 
-    // Paradas del tramo L2
     const minutosAhoraL2 = new Date().getHours() * 60 + new Date().getMinutes();
     const idxInicioL2 = mejorViaje.L2.subida.idx;
     const idxFinL2 = mejorViaje.L2.destino.idx;
@@ -939,7 +819,6 @@ function dibujarTramoEscalaL2(mejorViaje, latDestino, lngDestino, nombreLugar) {
         })
     }).addTo(mapa);
 
-    // Ajustar la vista del mapa para incluir ambas líneas
     if (lineaTramoPolyline) {
         let bounds = lineaTramoPolyline.getBounds();
         bounds.extend(lineaTramoL2Polyline.getBounds());
@@ -948,87 +827,206 @@ function dibujarTramoEscalaL2(mejorViaje, latDestino, lngDestino, nombreLugar) {
 }
 
 // =====================================================
-// SIMULADOR DE COLECTIVO EN TIEMPO REAL (SEGUNDO A SEGUNDO)
+// SIMULADOR DE COLECTIVOS / CONTROL MANUAL
 // =====================================================
 
-const iconoColectivoSimulado = L.icon({
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
-    popupAnchor: [0, -18]
-});
 
-let marcadoresColectivos = [];
-let bucleSimulacion = null;
+function alternarRastreoColectivos() {
+    rastreoActivo = !rastreoActivo;
+    const btn = document.getElementById('btn-rastreo');
+    
+    if (rastreoActivo) {
+        btn.innerHTML = '🚌✅';
+        btn.style.borderColor = '#10b981'; // Borde verde de encendido
+        if (recorridoActual) activarRastreoColectivos(); 
+    } else {
+        btn.innerHTML = '🚌❌';
+        btn.style.borderColor = '#ef4444'; // Borde rojo de apagado
+        detenerRastreoColectivos();
+    }
+}
+
+function detenerRastreoColectivos() {
+    if (bucleSimulacion) {
+        clearInterval(bucleSimulacion);
+        bucleSimulacion = null;
+    }
+    marcadoresColectivos.forEach(m => mapa.removeLayer(m));
+    marcadoresColectivos = [];
+}
 
 function activarRastreoColectivos() {
     if (bucleSimulacion) clearInterval(bucleSimulacion);
-    
-    // Ejecutar cada 1 segundo (1000 ms) para movimiento fluido
     actualizarPosicionColectivos();
     bucleSimulacion = setInterval(actualizarPosicionColectivos, 1000); 
 }
 
 function actualizarPosicionColectivos() {
-    // 1. Limpiar colectivos anteriores
-    marcadoresColectivos.forEach(m => mapa.removeLayer(m));
-    marcadoresColectivos = [];
+    if (!recorridoActual || !recorridoActual.recorrido || recorridoActual.recorrido.length === 0) return;
 
-    if (!recorridoActual || !recorridoActual.paradas || recorridoActual.paradas.length === 0) return;
+    const horariosRaw = horariosLineasCargados[recorridoActual.key];
+    if (!horariosRaw || !horariosRaw.lineas || horariosRaw.lineas.length === 0) return;
 
-    const horarios = horariosLineasCargados[recorridoActual.key];
-    if (!horarios || !horarios.horarios_fijos) return;
+const ahora = new Date();
+    
+    // --- MODO HORA REAL ---
+    const segundosAhora = (ahora.getHours() * 3600) + (ahora.getMinutes() * 60) + ahora.getSeconds();
+    const diaSemana = ahora.getDay(); 
+    // --------------------------------
 
-    const ahora = new Date();
-    // Obtener el tiempo exacto en segundos transcurridos hoy
-    const segundosAhora = ahora.getHours() * 3600 + ahora.getMinutes() * 60 + ahora.getSeconds();
+    let tipoDiaStr = "Lunes a Viernes";
+    if (diaSemana === 6) tipoDiaStr = "Sábados";
+    if (diaSemana === 0) tipoDiaStr = "Domingos";
 
-    const paradas = recorridoActual.paradas;
-    let primeraParadaFija = paradas.find(p => horarios.horarios_fijos[p.nombre]);
-    if (!primeraParadaFija) return;
+    let diasDisponibles = horariosRaw.lineas[0].horarios_por_dia || horariosRaw.lineas[0].servicios;
+    
+    if (!diasDisponibles) {
+        console.warn("El JSON de " + recorridoActual.nombre + " no tiene un formato compatible.");
+        return; 
+    }
 
-    const cantidadViajes = horarios.horarios_fijos[primeraParadaFija.nombre].length;
+    const lineaHorarios = diasDisponibles.find(d => d.días === tipoDiaStr);
+    if (!lineaHorarios || !lineaHorarios.horarios) return;
 
-    for (let v = 0; v < cantidadViajes; v++) {
-        let tiemposViaje = [];
+    const viajesDelDia = lineaHorarios.horarios;
+    const recorridoCoords = recorridoActual.recorrido;
+    let distanciasAcumuladas = [0];
+    let distanciaTotal = 0;
+    
+    for (let i = 0; i < recorridoCoords.length - 1; i++) {
+        let d = calcularDistancia(recorridoCoords[i], recorridoCoords[i+1]);
+        distanciaTotal += d;
+        distanciasAcumuladas.push(distanciaTotal);
+    }
+
+    let colectivosEnMovimiento = [];
+
+    for (let v = 0; v < viajesDelDia.length; v++) {
+        let viaje = viajesDelDia[v];
         
-        for (let i = 0; i < paradas.length; i++) {
-            if (horarios.horarios_fijos[paradas[i].nombre] && horarios.horarios_fijos[paradas[i].nombre][v]) {
-                tiemposViaje.push({
-                    idxParada: i,
-                    nombre: paradas[i].nombre,
-                    segundos: obtenerMinutosDesdeCadena(horarios.horarios_fijos[paradas[i].nombre][v]) * 60,
-                    lat: paradas[i].lat,
-                    lng: paradas[i].lng
-                });
+        let paradasValidas = [];
+        for (let nombreParada in viaje) {
+            if (viaje[nombreParada] !== null) {
+                let min = obtenerMinutosDesdeCadena(viaje[nombreParada]);
+                paradasValidas.push({ nombre: nombreParada, segundos: min * 60 });
+            }
+        }
+        
+        if (paradasValidas.length < 2) continue;
+
+        let segInicio = paradasValidas[0].segundos;
+        let segFin = paradasValidas[paradasValidas.length - 1].segundos;
+        let nombreDestino = paradasValidas[paradasValidas.length - 1].nombre;
+
+        if (segFin < segInicio) {
+            if (segundosAhora < segFin) {
+                segInicio -= 24 * 3600;
+            } else {
+                segFin += 24 * 3600;
+                for(let p of paradasValidas) {
+                    if(p.segundos < segInicio) p.segundos += 24 * 3600;
+                }
             }
         }
 
-        // Evaluar tramo actual del viaje
-        for (let j = 0; j < tiemposViaje.length - 1; j++) {
-            let p1 = tiemposViaje[j];
-            let p2 = tiemposViaje[j + 1];
+        if (segundosAhora >= segInicio && segundosAhora <= segFin) {
+            let progresoTiempo = (segundosAhora - segInicio) / (segFin - segInicio); 
+            let distanciaActual = progresoTiempo * distanciaTotal;
 
-            // Si la hora actual en segundos está entre p1 y p2, el colectivo está en movimiento
-            if (segundosAhora >= p1.segundos && segundosAhora < p2.segundos) {
-                let duracionTramo = p2.segundos - p1.segundos;
-                let progreso = (segundosAhora - p1.segundos) / duracionTramo; // Porcentaje entre 0.0 y 1.0
+            let latActual = recorridoCoords[0][0];
+            let lngActual = recorridoCoords[0][1];
 
-                // Interpolación lineal de coordenadas segundo a segundo
-                let latActual = p1.lat + (p2.lat - p1.lat) * progreso;
-                let lngActual = p1.lng + (p2.lng - p1.lng) * progreso;
-
-                // Dibujar en el mapa
-                let marcador = L.marker([latActual, lngActual], { icon: iconoColectivoSimulado })
-                    .addTo(mapa)
-                    .bindPopup(`<div style="text-align:center;">🚌 <b>${recorridoActual.nombre}</b><br><small>Hacia: ${p2.nombre}</small></div>`);
-                
-                marcadoresColectivos.push(marcador);
+            for (let i = 0; i < distanciasAcumuladas.length - 1; i++) {
+                if (distanciaActual >= distanciasAcumuladas[i] && distanciaActual <= distanciasAcumuladas[i+1]) {
+                    let distTramo = distanciasAcumuladas[i+1] - distanciasAcumuladas[i];
+                    let progresoTramo = distTramo > 0 ? (distanciaActual - distanciasAcumuladas[i]) / distTramo : 0;
+                    
+                    let p1 = recorridoCoords[i];
+                    let p2 = recorridoCoords[i+1];
+                    latActual = p1[0] + (p2[0] - p1[0]) * progresoTramo;
+                    lngActual = p1[1] + (p2[1] - p1[1]) * progresoTramo;
+                    break;
+                }
             }
+            
+            let proximaParada = nombreDestino;
+            let minRestantesProxima = Math.ceil((segFin - segundosAhora) / 60);
+
+            for (let k = 0; k < paradasValidas.length; k++) {
+                if (paradasValidas[k].segundos > segundosAhora) {
+                    proximaParada = paradasValidas[k].nombre;
+                    minRestantesProxima = Math.ceil((paradasValidas[k].segundos - segundosAhora) / 60);
+                    break;
+                }
+            }
+
+            let distanciaAlUsuario = ubicacionUsuario ? calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [latActual, lngActual]) : 0;
+
+            colectivosEnMovimiento.push({
+                lat: latActual,
+                lng: lngActual,
+                destino: nombreDestino,
+                proximaParada: proximaParada,
+                minRestantesProxima: minRestantesProxima,
+                distancia: distanciaAlUsuario
+            });
         }
     }
 
-    
+    if (ubicacionUsuario && colectivosEnMovimiento.length > 0) {
+        colectivosEnMovimiento.sort((a, b) => a.distancia - b.distancia);
+    }
+
+    if (marcadoresColectivos.length !== colectivosEnMovimiento.length) {
+        marcadoresColectivos.forEach(m => mapa.removeLayer(m));
+        marcadoresColectivos = [];
+        colectivosEnMovimiento.forEach(() => {
+            let iconoEmojiBus = L.divIcon({
+                className: 'custom-emoji-bus',
+                html: '<div style="font-size: 28px; line-height: 1; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">🚌</div>',
+                iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -15]
+            });
+            let marcador = L.marker([0, 0], { icon: iconoEmojiBus }).addTo(mapa);
+            marcadoresColectivos.push(marcador);
+        });
+    }
+
+    colectivosEnMovimiento.forEach((cole, index) => {
+        let marcador = marcadoresColectivos[index];
+        marcador.setLatLng([cole.lat, cole.lng]); 
+
+        let etiqueta = index === 0 ? "📍 Más cercano a vos" : (index === 1 ? "🔜 Próximo" : "🚌 En recorrido");
+        let colorEtiqueta = index === 0 ? "#dc2626" : (index === 1 ? "#2563eb" : "#475569"); 
+
+        let textoSiguiente = cole.minRestantesProxima <= 1 ? "¡Llegando!" : `en ~${cole.minRestantesProxima} min`;
+
+        // let contenidoPopup = `
+        //     <div style="text-align:center; min-width: 160px;">
+        //         <b>${recorridoActual.nombre}</b><br>
+        //         <b style="color:${colorEtiqueta};">${etiqueta}</b><br>
+        //         <hr style="margin: 5px 0; border: 0; border-top: 1px solid #ccc;">
+        //         <span style="color: #059669; font-weight: bold;">🚏 Próxima parada:</span><br>
+        //         <span>${cole.proximaParada} <br><b>(${textoSiguiente})</b></span><br>
+        //         <hr style="margin: 5px 0; border: 0; border-top: 1px dashed #ccc;">
+        //         <small style="color: #666; font-size: 0.85em;">🏁 Termina en: ${cole.destino}</small>
+        //     </div>
+        // `;
+
+        let contenidoPopup = `
+            <div style="text-align:center; min-width: 160px;">
+                <b>${recorridoActual.nombre}</b><br>
+                <spam> Ubicacion siumada</spam>
+            </div>
+        `;
+
+
+        let popup = marcador.getPopup();
+        if (popup && popup.isOpen()) {
+            popup.setContent(contenidoPopup);
+        } else {
+            marcador.bindPopup(contenidoPopup);
+        }
+    });
 }
 
 // =====================================================
@@ -1047,7 +1045,6 @@ function alternarModoMapa(activar) {
         btnExpandir.classList.add('hidden');
         btnVolver.classList.remove('hidden');
 
-        // Copiar las instrucciones del panel principal al panel flotante inferior
         if (resumenOriginal && resumenInferior) {
             resumenInferior.innerHTML = resumenOriginal.innerHTML;
             if (resumenOriginal.innerHTML.trim() !== '') {
@@ -1061,7 +1058,6 @@ function alternarModoMapa(activar) {
         panelInferior.classList.add('hidden');
     }
 
-    // CRÍTICO para Leaflet: reajusta el renderizado del mapa al nuevo tamaño del contenedor
     setTimeout(() => {
         if (mapa) {
             mapa.invalidateSize();
@@ -1069,7 +1065,6 @@ function alternarModoMapa(activar) {
     }, 200);
 }
 
-// Opcional: Sincronizar instrucciones automáticamente si se calcula la ruta estando el mapa expandido
 const observadorResumen = new MutationObserver(() => {
     const resumenOriginal = document.getElementById('resumen-viaje');
     const resumenInferior = document.getElementById('resumen-viaje-inferior');
