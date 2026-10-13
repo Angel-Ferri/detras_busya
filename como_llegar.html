@@ -71,6 +71,24 @@
                         <option value="" disabled selected>-- Primero selecciona destino --</option>
                     </select>
                 </div>
+
+                <!-- NUEVO CONTENEDOR DE BOTONES DE ACCIÓN (Integrados en el panel) -->
+                <div class="grupo-control contenedor-botones-accion" style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                    
+                    <!-- Botón de Expandir Mapa -->
+                    <button id="btn-expandir-mapa" onclick="alternarModoMapa(true)" style="flex: 1; padding: 10px; border-radius: 8px; background: #2563eb; color: white; border: none; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                        🗺️ Expandir Mapa
+                    </button>
+
+                    <!-- Botón de Rastreo de Colectivos -->
+                    <button id="btn-rastreo" onclick="alternarRastreoColectivos()" style="flex: 1; padding: 10px; border-radius: 8px; background: white; color: #333; border: 2px solid #ef4444; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        🚌❌ Rastreo Off
+                    </button>
+
+                    <!-- Contenedor dinámico donde JS va a inyectar el botón de Escala cuando sea necesario -->
+                    <div id="contenedor-boton-escala" class="hidden" style="width: 100%; margin-top: 5px;"></div>
+                </div>
+
             </div>
         </header>
 
@@ -94,16 +112,11 @@
         </div>
 
         <main class="content-container">
-            <!-- Contenedor del Mapa con botones flotantes -->
+            <!-- Contenedor del Mapa -->
             <div id="contenedor-mapa-wrapper" class="relative width-full">
-                
-                <!-- Botón para expandir/pantalla completa -->
-                <button id="btn-expandir-mapa" onclick="alternarModoMapa(true)" class="btn-flotante-mapa btn-expandir">
-                    🗺️ Expandir Mapa
-                </button>
 
-                <!-- Botón superior para volver al planificador -->
-                <button id="btn-volver-planificador" onclick="alternarModoMapa(false)" class="btn-flotante-mapa btn-volver hidden">
+                <!-- Botón superior para volver al planificador (Aparece en modo full screen) -->
+                <button id="btn-volver-planificador" onclick="alternarModoMapa(false)" class="btn-flotante-mapa btn-volver hidden" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10000; background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; text-align: center;">
                     🔙 Volver al Planificador
                 </button>
 
@@ -111,7 +124,7 @@
                 <div id="map-principal" style="height: 400px; width: 100%;"></div>
 
                 <!-- Panel flotante inferior para las instrucciones/resumen del viaje en modo expandido -->
-                <div id="panel-instrucciones-inferior" class="panel-inferior-flotante hidden">
+                <div id="panel-instrucciones-inferior" class="panel-inferior-flotante hidden" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 10000; max-height: 40vh; overflow-y: auto;">
                     <div id="resumen-viaje-inferior"></div>
                 </div>
             </div>
@@ -132,19 +145,13 @@
             <button class="modal-estudiante-cerrar" onclick="document.getElementById('modal-caminar').classList.add('hidden')">×</button>
             <div class="modal-estudiante-icono" style="margin-bottom: 10px;">🚶</div>
             <h3 style="margin-bottom: 10px;">¡Estás muy cerca!</h3>
-            <p id="modal-caminar-texto" style="font-size: 0.95rem; color: #475569; margin: 15px 0; line-height: 1.5;">
-                <!-- El texto se inyecta desde JavaScript -->
-            </p>
+            <p id="modal-caminar-texto" style="font-size: 0.95rem; color: #475569; margin: 15px 0; line-height: 1.5;"></p>
             <button class="linea-card" onclick="document.getElementById('modal-caminar').classList.add('hidden')" style="background-color: #f59e0b; color: white; border: none; justify-content: center; width: 100%; margin-top: 15px; font-weight: bold;">
                 Entendido
             </button>
         </div>
     </div>
 
-
-    <button id="btn-rastreo" onclick="alternarRastreoColectivos()" class="btn-flotante-colectivos">
-        🚌❌
-    </button>
     <!-- Scripts de la aplicación -->
     <script src="script/como_llegar.js"></script>
     <script src="panel/main.js" defer></script>

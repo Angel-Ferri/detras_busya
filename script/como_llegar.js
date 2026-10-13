@@ -355,11 +355,25 @@ function calcularRutaYTiempo() {
 
 function trazarRutaAPie(desde, hasta) {
     if (routingControlPie) mapa.removeControl(routingControlPie);
+    
     routingControlPie = L.Routing.control({
-        waypoints: [L.latLng(desde.lat, desde.lng), L.latLng(hasta[0], hasta[1])],
-        router: L.Routing.osrmv1({ serviceUrl: 'https://routing.openstreetmap.de/routed-foot/route/v1', profile: 'foot' }),
-        show: false, addWaypoints: false, draggableWaypoints: false, createMarker: () => null,
-        lineOptions: { styles: [{ color: '#8b5cf6', weight: 6, dashArray: '8, 8', opacity: 0.9 }] }
+        waypoints: [
+            L.latLng(desde.lat, desde.lng),
+            L.latLng(hasta[0], hasta[1])
+        ],
+        // ACÁ ESTÁ LA MAGIA: Usamos el servidor oficial y forzamos el perfil peatonal
+        router: L.Routing.osrmv1({
+            serviceUrl: 'https://router.project-osrm.org/route/v1',
+            profile: 'foot'
+        }),
+        show: false,
+        addWaypoints: false,
+        draggableWaypoints: false,
+        fitSelectedRoutes: false,
+        createMarker: function () { return null; },
+        lineOptions: {
+            styles: [{ color: '#8b5cf6', weight: 6, dashArray: '8, 8', opacity: 0.9 }]
+        }
     }).addTo(mapa);
 }
 
@@ -535,23 +549,24 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
     document.getElementById('resultados-busqueda').innerHTML = '';
     document.getElementById('buscador-lugares').value = nombreLugar;
 
-    if (!ubicacionUsuario) { 
-        alert('Activá tu GPS para calcular la mejor ruta.'); 
-        return; 
+    if (!ubicacionUsuario) {
+        alert('Necesitamos acceso a tu ubicación GPS para calcular el viaje más rápido. Activa tu ubicación y recarga la página.');
+        return;
     }
 
     limpiarMapa();
 
     let distDirecta = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [latDestino, lngDestino]);
     let metrosDirectos = Math.round(distDirecta * 1000);
-    let cuadrasAprox = Math.round(metrosDirectos / 100); // Calculamos las cuadras
+    let cuadrasAprox = Math.round(metrosDirectos / 100);
 
-    // Si está a 10 cuadras o menos (1.0 km), mostramos la recomendación de ir a pie
+    // =====================================================
+    // FASE 0: Recomendación de ir a pie
+    // =====================================================
     if (distDirecta <= 1.0) {
         let minCaminando = Math.max(1, Math.round(((distDirecta * 1.2) / 5) * 60));
-
         trazarRutaAPie(ubicacionUsuario, [latDestino, lngDestino]);
-
+        
         marcadorDestinoBuscado = L.marker([latDestino, lngDestino]).addTo(mapa)
             .bindPopup(`📍 <b>${nombreLugar}</b><br>🚶 ¡Estás a solo ${cuadrasAprox} cuadras! Llegás caminando en ~${minCaminando} min.`)
             .openPopup();
@@ -566,128 +581,176 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
                 💡 Te recomiendo ir caminando si es de menos de 10 cuadras.
             </p>
         `;
-
         mapa.setView([latDestino, lngDestino], 15);
         return; 
     }
 
     let mejorViaje = null;
-    let mejorPuntajeTotal = Infinity;
-    const minutosAhora = new Date().getHours() * 60 + new Date().getMinutes();
+    let menorPuntajeTotal = Infinity; 
+    const ahora = new Date();
+    const minutosAhora = ahora.getHours() * 60 + ahora.getMinutes();
 
-    // ... (el resto de la función FASE 1 y FASE 2 sigue exactamente igual hacia abajo) ...
+    // Coordenadas fijas obligatorias para la subida en escala (León Guillet y Gral. Paz)
+    const latEscalaForzada = -33.68863077918209;
+    const lngEscalaForzada = -65.46474212259419;
 
+    // =====================================================
+    // FASE 1: EVALUAR TODOS LOS VIAJES DIRECTOS POSIBLES
+    // =====================================================
     for (const keyLinea in datosLineasCargados) {
         const linea = datosLineasCargados[keyLinea];
         if (!linea || !linea.paradas || linea.paradas.length === 0) continue;
 
-        let origenCercano = null, minDistOrigen = Infinity;
-        linea.paradas.forEach((parada, idx) => {
-            let d = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [parada.lat, parada.lng]);
-            if (d < minDistOrigen) { minDistOrigen = d; origenCercano = { parada, idx, dist: d }; }
+        let origenes = [];
+        let destinos = [];
+
+        linea.paradas.forEach((p, idx) => {
+            let d = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [p.lat, p.lng]);
+            if (d <= 1.5) origenes.push({ parada: p, idx, dist: d });
         });
 
-        let destinoCercano = null, minDistDestino = Infinity;
-        linea.paradas.forEach((parada, idx) => {
-            if (origenCercano && idx > origenCercano.idx) {
-                let d = calcularDistancia([latDestino, lngDestino], [parada.lat, parada.lng]);
-                if (d < minDistDestino) { minDistDestino = d; destinoCercano = { parada, idx, dist: d }; }
+        linea.paradas.forEach((p, idx) => {
+            let d = calcularDistancia([latDestino, lngDestino], [p.lat, p.lng]);
+            if (d <= 1.5) destinos.push({ parada: p, idx, dist: d });
+        });
+
+        // Forzado para directos si el destino está en la zona
+        if (distDestinoMenorA(latDestino, lngDestino, { lat: latEscalaForzada, lng: lngEscalaForzada }, 0.8)) {
+            let idxParadaExacta = -1;
+            let menorDistP = Infinity;
+            linea.paradas.forEach((p, idx) => {
+                let dP = calcularDistancia([p.lat, p.lng], [latEscalaForzada, lngEscalaForzada]);
+                if (dP < menorDistP) {
+                    menorDistP = dP;
+                    idxParadaExacta = idx;
+                }
+            });
+
+            if (idxParadaExacta !== -1 && menorDistP <= 0.05) {
+                let paradaForzada = linea.paradas[idxParadaExacta];
+                let distF = calcularDistancia([latDestino, lngDestino], [paradaForzada.lat, paradaForzada.lng]);
+                if (!destinos.some(d => d.idx === idxParadaExacta)) {
+                    destinos.push({ parada: paradaForzada, idx: idxParadaExacta, dist: distF, forzado: true });
+                }
             }
-        });
-
-        if (!origenCercano || !destinoCercano) continue;
-
-        let minCaminaOrigen = Math.max(1, Math.round((origenCercano.dist) / 5 * 60)); 
-        let minCaminaDestino = Math.max(1, Math.round((destinoCercano.dist) / 5 * 60)); 
-
-        let lineaOriginal = recorridoActual;
-        recorridoActual = linea; 
-        let horarioOrigen = calcularHorarioEstimadoParada(keyLinea, origenCercano.idx, minutosAhora);
-        recorridoActual = lineaOriginal; 
-
-        let minEspera = horarioOrigen ? Math.max(0, horarioOrigen.minutosLlegada - minutosAhora) : 5; 
-        
-        let distanciaBus = 0;
-        for (let i = origenCercano.idx; i < destinoCercano.idx; i++) {
-            distanciaBus += calcularDistancia([linea.paradas[i].lat, linea.paradas[i].lng], [linea.paradas[i+1].lat, linea.paradas[i+1].lng]);
         }
-        let minColectivo = Math.max(2, Math.round(distanciaBus / 18 * 60)); 
 
-        let tiempoReal = minCaminaOrigen + minEspera + minColectivo + minCaminaDestino;
-        let puntajeAlgoritmo = (minCaminaOrigen * 3) + minEspera + minColectivo + (minCaminaDestino * 2);
+        for (let o of origenes) {
+            for (let d of destinos) {
+                if (o.idx < d.idx || d.forzado) { 
+                    let minCaminaOrigen = (o.dist / 5) * 60; 
+                    let minCaminaDestino = (d.dist / 5) * 60; 
+                    
+                    let distBus = 0;
+                    for(let i = o.idx; i < d.idx; i++) distBus += calcularDistancia([linea.paradas[i].lat, linea.paradas[i].lng], [linea.paradas[i+1].lat, linea.paradas[i+1].lng]);
+                    let minBus = (distBus / 18) * 60; 
 
-        if (puntajeAlgoritmo < mejorPuntajeTotal) {
-            mejorPuntajeTotal = puntajeAlgoritmo;
-            mejorViaje = {
-                tipo: 'directo',
-                lineaKey: keyLinea, nombreLinea: linea.nombre,
-                origen: origenCercano, destino: destinoCercano,
-                tiempoTotal: tiempoReal, 
-                metrosDestino: Math.round(destinoCercano.dist * 1000)
-            };
-        }
-    }
+                    let puntaje = (minCaminaOrigen * 2.5) + minBus + (minCaminaDestino * 4.0);
+                    if (d.forzado) puntaje -= 8000;
 
-    let buscarEscalas = true;
-    if (mejorViaje && mejorViaje.metrosDestino <= 300) {
-        buscarEscalas = false;
-    }
-
-    if (buscarEscalas) {
-        let penalizacionTransbordo = mejorViaje ? 5 : 0; 
-
-        for (const keyL1 in datosLineasCargados) {
-            for (const keyL2 in datosLineasCargados) {
-                if (keyL1 === keyL2) continue; 
-                
-                const L1 = datosLineasCargados[keyL1];
-                const L2 = datosLineasCargados[keyL2];
-                if (!L1 || !L2 || !L1.paradas.length || !L2.paradas.length) continue;
-
-                let origenL1 = null, minD1 = Infinity;
-                L1.paradas.forEach((p, idx) => {
-                    let d = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [p.lat, p.lng]);
-                    if (d < minD1) { minD1 = d; origenL1 = { parada: p, idx: idx, dist: d }; }
-                });
-
-                let destinoL2 = null, minD2 = Infinity;
-                L2.paradas.forEach((p, idx) => {
-                    let d = calcularDistancia([latDestino, lngDestino], [p.lat, p.lng]);
-                    if (d < minD2) { minD2 = d; destinoL2 = { parada: p, idx: idx, dist: d }; }
-                });
-
-                if (!origenL1 || !destinoL2) continue;
-
-                for (let i = origenL1.idx + 1; i < L1.paradas.length; i++) {
-                    for (let j = 0; j < destinoL2.idx; j++) {
-                        let distInterseccion = calcularDistancia([L1.paradas[i].lat, L1.paradas[i].lng], [L2.paradas[j].lat, L2.paradas[j].lng]);
+                    if (puntaje < menorPuntajeTotal) {
+                        menorPuntajeTotal = puntaje;
                         
-                        if (distInterseccion <= 0.15) { 
-                            let minCaminaInicio = Math.round((origenL1.dist) / 5 * 60);
-                            let minEspera1 = 5; 
-                            let cantParadasL1 = i - origenL1.idx;
-                            let minBus1 = Math.round((calcularDistancia([origenL1.parada.lat, origenL1.parada.lng], [L1.paradas[i].lat, L1.paradas[i].lng])) / 18 * 60);
-                            
-                            let minCaminaEscala = Math.max(1, Math.round(distInterseccion / 5 * 60));
-                            let minEspera2 = 5;
-                            let cantParadasL2 = destinoL2.idx - j;
-                            let minBus2 = Math.round((calcularDistancia([L2.paradas[j].lat, L2.paradas[j].lng], [destinoL2.parada.lat, destinoL2.parada.lng])) / 18 * 60);
-                            
-                            let minCaminaFin = Math.round((destinoL2.dist) / 5 * 60);
+                        let lineaOriginal = recorridoActual;
+                        recorridoActual = linea; 
+                        let horarioOrigen = calcularHorarioEstimadoParada(keyLinea, o.idx, minutosAhora);
+                        recorridoActual = lineaOriginal; 
+                        let minEspera = horarioOrigen ? Math.max(0, horarioOrigen.minutosLlegada - minutosAhora) : 5;
 
-                            let tiempoRealTransbordo = minCaminaInicio + minEspera1 + minBus1 + minCaminaEscala + minEspera2 + minBus2 + minCaminaFin;
-                            let puntajeTransbordo = (minCaminaInicio * 2) + minBus1 + (cantParadasL1 * 1.5) + (minCaminaEscala * 3) + minBus2 + (cantParadasL2 * 1.5) + (minCaminaFin * 2);
+                        mejorViaje = {
+                            tipo: 'directo', lineaKey: keyLinea, nombreLinea: linea.nombre,
+                            origen: o, destino: d,
+                            tiempoTotal: Math.round(minCaminaOrigen + minEspera + minBus + minCaminaDestino),
+                            metrosDestino: Math.round(d.dist * 1000)
+                        };
+                    }
+                }
+            }
+        }
+    }
 
-                            if (puntajeTransbordo + penalizacionTransbordo < mejorPuntajeTotal) {
-                                mejorPuntajeTotal = puntajeTransbordo + penalizacionTransbordo;
-                                mejorViaje = {
-                                    tipo: 'transbordo',
-                                    L1: { key: keyL1, nombre: L1.nombre, origen: origenL1, bajada: { parada: L1.paradas[i], idx: i } },
-                                    L2: { key: keyL2, nombre: L2.nombre, subida: { parada: L2.paradas[j], idx: j }, destino: destinoL2 },
-                                    distEscala: Math.round(distInterseccion * 1000),
-                                    tiempoTotal: tiempoRealTransbordo, 
-                                    metrosDestino: Math.round(destinoL2.dist * 1000)
-                                };
+    // =====================================================
+    // FASE 2: EVALUAR TODOS LOS TRANSBORDOS POSIBLES (CON ESCALA FORZADA)
+    // =====================================================
+    let penalidadTransbordo = 20; 
+
+    for (const keyL1 in datosLineasCargados) {
+        for (const keyL2 in datosLineasCargados) {
+            if (keyL1 === keyL2) continue; 
+            
+            const L1 = datosLineasCargados[keyL1];
+            const L2 = datosLineasCargados[keyL2];
+            if (!L1 || !L2) continue;
+
+            let origenesL1 = [];
+            L1.paradas.forEach((p, idx) => {
+                let d = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [p.lat, p.lng]);
+                if (d <= 1.5) origenesL1.push({ parada: p, idx, dist: d });
+            });
+
+            // En la escala, encontramos cuál es la parada en L2 más cercana a las coordenadas exactas de León Guillet y Gral. Paz
+            let idxSubidaL2Forzada = -1;
+            let minDSubidaL2 = Infinity;
+            L2.paradas.forEach((p, idx) => {
+                let d = calcularDistancia([p.lat, p.lng], [latEscalaForzada, lngEscalaForzada]);
+                if (d < minDSubidaL2) {
+                    minDSubidaL2 = d;
+                    idxSubidaL2Forzada = idx;
+                }
+            });
+
+            // Si la parada más cercana está a menos de 50 metros, la fijamos como punto de subida obligatorio de L2
+            let subidaL2Fija = (idxSubidaL2Forzada !== -1 && minDSubidaL2 <= 0.05) ? { parada: L2.paradas[idxSubidaL2Forzada], idx: idxSubidaL2Forzada } : null;
+
+            // Destinos posibles para L2 (cerca del destino final o en Gral. Paz y Pringles)
+            let destinosL2 = [];
+            L2.paradas.forEach((p, idx) => {
+                let d = calcularDistancia([latDestino, lngDestino], [p.lat, p.lng]);
+                if (d <= 1.5) destinosL2.push({ parada: p, idx, dist: d });
+            });
+
+            for (let o1 of origenesL1) {
+                for (let d2 of destinosL2) {
+                    for (let i = o1.idx + 1; i < L1.paradas.length; i++) { // Bajada de L1
+                        
+                        // REGLA DE ESCALA: Evaluamos usando la parada fija de subida en L2
+                        let paradaBajadaL1 = L1.paradas[i];
+                        let paradaSubidaL2 = subidaL2Fija ? subidaL2Fija.parada : null;
+
+                        if (paradaSubidaL2 && subidaL2Fija.idx < d2.idx) {
+                            // Distancia caminando entre la bajada de L1 y la subida fija de L2
+                            let distEscala = calcularDistancia([paradaBajadaL1.lat, paradaBajadaL1.lng], [paradaSubidaL2.lat, paradaSubidaL2.lng]);
+                            
+                            if (distEscala <= 0.3) { // Máximo 300m de caminata de transbordo
+                                let minCaminaInicio = (o1.dist / 5) * 60;
+                                let minCaminaEscala = (distEscala / 5) * 60;
+                                let minCaminaFin = (d2.dist / 5) * 60;
+
+                                let distBus1 = 0;
+                                for(let k = o1.idx; k < i; k++) distBus1 += calcularDistancia([L1.paradas[k].lat, L1.paradas[k].lng], [L1.paradas[k+1].lat, L1.paradas[k+1].lng]);
+                                let minBus1 = (distBus1 / 18) * 60;
+
+                                let distBus2 = 0;
+                                for(let k = subidaL2Fija.idx; k < d2.idx; k++) distBus2 += calcularDistancia([L2.paradas[k].lat, L2.paradas[k].lng], [L2.paradas[k+1].lat, L2.paradas[k+1].lng]);
+                                let minBus2 = (distBus2 / 18) * 60;
+
+                                let puntajeEscala = (minCaminaInicio * 2.5) + minBus1 + (minCaminaEscala * 4.0) + minBus2 + (minCaminaFin * 4.0) + penalidadTransbordo;
+                                
+                                // Fuerte bonificación para priorizar esta escala exacta en León Guillet y Gral. Paz
+                                puntajeEscala -= 10000;
+
+                                if (puntajeEscala < menorPuntajeTotal) {
+                                    menorPuntajeTotal = puntajeEscala;
+                                    
+                                    mejorViaje = {
+                                        tipo: 'transbordo',
+                                        L1: { key: keyL1, nombre: L1.nombre, origen: o1, bajada: { parada: paradaBajadaL1, idx: i } },
+                                        L2: { key: keyL2, nombre: L2.nombre, subida: { parada: paradaSubidaL2, idx: subidaL2Fija.idx }, destino: d2 },
+                                        distEscala: Math.round(distEscala * 1000),
+                                        tiempoTotal: Math.round(minCaminaInicio + 5 + minBus1 + minCaminaEscala + 5 + minBus2 + minCaminaFin), 
+                                        metrosDestino: Math.round(d2.dist * 1000)
+                                    };
+                                }
                             }
                         }
                     }
@@ -696,6 +759,9 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         }
     }
 
+    // =====================================================
+    // FASE 3: APLICAR RESULTADOS A LA INTERFAZ
+    // =====================================================
     if (mejorViaje) {
         if (mejorViaje.tipo === 'directo') {
             document.getElementById('select-linea').value = mejorViaje.lineaKey;
@@ -707,7 +773,7 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
                 procesarRespuestaSugerencia(true); 
                 
                 marcadorDestinoBuscado = L.marker([latDestino, lngDestino]).addTo(mapa)
-                    .bindPopup(`📍 <b>Destino:</b> ${nombreLugar}<br>🏆 <b>Directo:</b> ${mejorViaje.tiempoTotal} min.<br>🚶 Caminás ${mejorViaje.metrosDestino}m al bajar.`)
+                    .bindPopup(`📍 <b>Destino:</b> ${nombreLugar}<br>🏆 <b>Ruta Directa:</b> ~${mejorViaje.tiempoTotal} min.<br>🚶 Caminás ${mejorViaje.metrosDestino}m al bajar.`)
                     .openPopup();
             }, 150);
 
@@ -725,41 +791,106 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
 
                 document.getElementById('resumen-viaje').innerHTML = `
                     <div class="paso-itinerario"><p>1. 🚶 Camina hacia <b>${mejorViaje.L1.origen.parada.nombre}</b>.</p></div>
-                    <div class="paso-itinerario"><p>2. 🚌 Toma la <b>${mejorViaje.L1.nombre}</b> y bajate en <b>${mejorViaje.L1.bajada.parada.nombre}</b>.</p></div>
+                    <div class="paso-itinerario"><p>2. 🚌 Tomá la <b>${mejorViaje.L1.nombre}</b> y bajate en <b>${mejorViaje.L1.bajada.parada.nombre}</b>.</p></div>
                     
                     <div style="background: #fff7ed; border-left: 4px solid #f97316; padding: 10px; margin: 8px 0; border-radius: 6px;">
-                        <p style="margin: 0 0 6px 0; font-size: 0.9rem;">🔄 <b>Este viaje requiere transbordo:</b></p>
-                        <p style="margin: 0 0 8px 0; font-size: 0.85rem; color: #475569;">Caminás ${mejorViaje.distEscala}m hacia <b>${mejorViaje.L2.subida.parada.nombre}</b> para tomar la <b>${mejorViaje.L2.nombre}</b>.</p>
-                        <button id="btn-confirmar-escala" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">
-                            🗺️ Dibujar escala de ${mejorViaje.L2.nombre} en el mapa
-                        </button>
+                        <p style="margin: 0 0 6px 0; font-size: 0.9rem;">🔄 <b>Transbordo obligatorio:</b></p>
+                        <p style="margin: 0; font-size: 0.85rem; color: #475569;">Caminás ${mejorViaje.distEscala}m hacia <b>${mejorViaje.L2.subida.parada.nombre}</b> (León Guillet y Gral. Paz) para tomar la <b>${mejorViaje.L2.nombre}</b>.</p>
                     </div>
 
                     <div class="paso-itinerario"><p>3. 📍 Caminá ${mejorViaje.metrosDestino}m hasta tu destino final.</p></div>
-                    <p style="font-weight: bold; color: #2e7d32;">Tiempo total (Escala incl.): ~${mejorViaje.tiempoTotal} min.</p>
+                    <p style="font-weight: bold; color: #2e7d32;">Tiempo total: ~${mejorViaje.tiempoTotal} min.</p>
                 `;
 
-                const btnEscala = document.getElementById('btn-confirmar-escala');
-                if (btnEscala) {
+                const contenedorEscala = document.getElementById('contenedor-boton-escala');
+                if (contenedorEscala) {
+                    contenedorEscala.classList.remove('hidden');
+                    contenedorEscala.innerHTML = `
+                        <button id="btn-confirmar-escala" style="width: 100%; background: #ef4444; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px;">
+                            🔄 Trazar escala de ${mejorViaje.L2.nombre}
+                        </button>
+                    `;
+
+                    const btnEscala = document.getElementById('btn-confirmar-escala');
                     btnEscala.onclick = () => {
                         dibujarTramoEscalaL2(mejorViaje, latDestino, lngDestino, nombreLugar);
-                        btnEscala.parentElement.style.background = '#fef2f2';
-                        btnEscala.parentElement.style.borderLeftColor = '#ef4444';
-                        btnEscala.outerHTML = `<span style="color:#dc2626; font-size:0.8rem; font-weight:bold;">✅ Escala trazada en el mapa</span>`;
+                        btnEscala.style.background = '#10b981'; 
+                        btnEscala.innerHTML = '✅ Escala trazada en el mapa';
+                        btnEscala.disabled = true; 
                     };
                 }
-
             }, 200);
         }
-
     } else {
-        alert('No pudimos encontrar una ruta viable hacia ese destino.');
+        alert('No encontramos una ruta lógica para ir a ese destino desde donde estás.');
     }
 }
 
+function distDestinoMenorA(latD, lngD, puntoReferencia, radioKm = 0.8) {
+    let d = calcularDistancia([latD, lngD], [puntoReferencia.lat, puntoReferencia.lng]);
+    return d <= radioKm;
+}
+
+// --- Utilidad: Encontrar el punto exacto en la línea (El "imán") ---
+function obtenerIndiceCoordenadaMasCercana(coordenadas, punto) {
+    let menorDist = Infinity;
+    let indice = 0;
+    coordenadas.forEach((coord, idx) => {
+        let d = calcularDistancia(coord, punto);
+        if (d < menorDist) {
+            menorDist = d;
+            indice = idx;
+        }
+    });
+    return indice;
+}
+
+
+// =================================================================
+// PEGAR ESTO ABAJO POR SI SE BORRÓ DEL ARCHIVO "1como_llegar.js"
+// =================================================================
 function dibujarTramoEscalaL2(mejorViaje, latDestino, lngDestino, nombreLugar) {
     let datosL2 = datosLineasCargados[mejorViaje.L2.key];
     let recorridoL2 = datosL2.recorrido;
+
+    // 1. DIBUJAR RECORRIDO COMPLETO DE L2 (Igual que hace L1)
+    lineaL2FondoPolyline = L.polyline(recorridoL2, { color: '#ef4444', weight: 5, opacity: 0.5 }).addTo(mapa);
+
+    // 2. DIBUJAR TODAS LAS PARADAS CON EL "IMÁN" Y ORDENADAS (El mismo método de L1)
+    const ahora = new Date();
+    const minutosAhoraL2 = ahora.getHours() * 60 + ahora.getMinutes();
+
+    const paradasConIndiceL2 = datosL2.paradas.map((parada, index) => ({
+        parada,
+        index,
+        idxRecorrido: obtenerIndiceCoordenadaMasCercana(recorridoL2, [parada.lat, parada.lng])
+    }));
+
+    // Ordenarlas según el recorrido para mantener la coherencia
+    paradasConIndiceL2.sort((a, b) => a.idxRecorrido - b.idxRecorrido);
+
+    paradasConIndiceL2.forEach(({ parada, index, idxRecorrido }) => {
+        let marker = L.circleMarker(recorridoL2[idxRecorrido], {
+            radius: 6,
+            color: '#7f1d1d', // Borde rojo oscuro
+            fillColor: '#ef4444', // Fondo rojo L2
+            fillOpacity: 0.8
+        }).addTo(mapa);
+
+        marker.on('click', () => {
+            let lineaOriginal = recorridoActual;
+            recorridoActual = datosL2;
+            const horario = calcularHorarioEstimadoParada(datosL2.key, index, minutosAhoraL2);
+            recorridoActual = lineaOriginal;
+
+            let infoHtml = horario ? '<br><small>' + (horario.esInterpolado ? 'Horario estimado' : 'Horario programado') + '</small>' : '<br><i>No hay horarios disponibles.</i>';
+            marker.bindPopup('<div style="text-align: center;"><b>🚏 Parada (' + datosL2.nombre + '):</b> ' + parada.nombre + infoHtml + '</div>').openPopup();
+        });
+
+        marcadoresParadas.push(marker);
+    });
+
+    // 3. RECORTAR Y DIBUJAR EL TRAMO ESPECÍFICO QUE SE VA A VIAJAR EN L2
     let proyOrigenL2 = obtenerProyeccionEnRecorrido(recorridoL2, [mejorViaje.L2.subida.parada.lat, mejorViaje.L2.subida.parada.lng]);
     let proyDestinoL2 = obtenerProyeccionEnRecorrido(recorridoL2, [mejorViaje.L2.destino.parada.lat, mejorViaje.L2.destino.parada.lng]);
 
@@ -775,42 +906,18 @@ function dibujarTramoEscalaL2(mejorViaje, latDestino, lngDestino, nombreLugar) {
         tramoCoordsL2.push(proyDestinoL2.puntoProyectado);
     }
 
-    lineaTramoL2Polyline = L.polyline(tramoCoordsL2, { color: '#ef4444', weight: 6, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }).addTo(mapa);
+    // Dibujamos el tramo resaltado (con color vibrante y sin transparencia)
+    lineaTramoL2Polyline = L.polyline(tramoCoordsL2, { 
+        color: '#dc7826', // Un rojo más puro y fuerte
+        weight: 6, 
+        opacity: 1, 
+        lineCap: 'round', 
+        lineJoin: 'round' 
+    }).addTo(mapa);
 
-    const minutosAhoraL2 = new Date().getHours() * 60 + new Date().getMinutes();
-    const idxInicioL2 = mejorViaje.L2.subida.idx;
-    const idxFinL2 = mejorViaje.L2.destino.idx;
-
-    datosL2.paradas.forEach((parada, index) => {
-        let enTramo = (idxInicioL2 <= idxFinL2) 
-            ? (index >= idxInicioL2 && index <= idxFinL2)
-            : (index >= idxInicioL2 || index <= idxFinL2);
-
-        if (enTramo) {
-            let marker = L.circleMarker([parada.lat, parada.lng], { 
-                radius: 6, 
-                color: '#991b1b', 
-                fillColor: '#ef4444', 
-                fillOpacity: 0.8 
-            }).addTo(mapa);
-
-            marker.on('click', () => {
-                let lineaOriginal = recorridoActual;
-                recorridoActual = datosL2;
-                const horario = calcularHorarioEstimadoParada(datosL2.key, index, minutosAhoraL2);
-                recorridoActual = lineaOriginal;
-
-                let infoHtml = horario ? '<br><small>' + (horario.esInterpolado ? 'Horario estimado' : 'Horario programado') + '</small>' : '<br><i>No hay horarios.</i>';
-                marker.bindPopup('<div style="text-align: center;"><b>🚏 Parada (' + datosL2.nombre + '):</b> ' + parada.nombre + infoHtml + '</div>').openPopup();
-            });
-
-            marcadoresParadas.push(marker);
-        }
-    });
-
-    marcadorDestinoFinalL2 = L.marker([latDestino, lngDestino]).addTo(mapa).bindPopup(`📍 <b>Destino Final:</b> ${nombreLugar}`).openPopup();
-
-    marcadorTransbordoL2 = L.marker([mejorViaje.L2.subida.parada.lat, mejorViaje.L2.subida.parada.lng], { 
+    // 4. MARCADORES DE INICIO Y FIN DEL TRANSBORDO
+    let idxTransbordo = obtenerIndiceCoordenadaMasCercana(recorridoL2, [mejorViaje.L2.subida.parada.lat, mejorViaje.L2.subida.parada.lng]);
+    marcadorTransbordoL2 = L.marker(recorridoL2[idxTransbordo], { 
         icon: L.divIcon({
             className: 'custom-div-icon',
             html: `<div style='background-color:#ef4444; color:white; padding:5px 10px; border-radius:10px; font-weight:bold; font-size:12px; white-space:nowrap; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);'>🔄 Subí a ${mejorViaje.L2.nombre}</div>`,
@@ -819,10 +926,17 @@ function dibujarTramoEscalaL2(mejorViaje, latDestino, lngDestino, nombreLugar) {
         })
     }).addTo(mapa);
 
+    let idxDestinoFinalL2 = obtenerIndiceCoordenadaMasCercana(recorridoL2, [mejorViaje.L2.destino.parada.lat, mejorViaje.L2.destino.parada.lng]);
+    marcadorDestinoFinalL2 = L.marker(recorridoL2[idxDestinoFinalL2], { icon: iconoParadaBajada })
+        .addTo(mapa).bindPopup(`📍 <b>Bajada:</b> ${mejorViaje.L2.destino.parada.nombre}<br>🚶 Caminás ${mejorViaje.metrosDestino}m hasta ${nombreLugar}`).openPopup();
+
+    // 5. AJUSTAR LA CÁMARA PARA QUE SE VEA TODO
     if (lineaTramoPolyline) {
         let bounds = lineaTramoPolyline.getBounds();
         bounds.extend(lineaTramoL2Polyline.getBounds());
-        mapa.fitBounds(bounds, { padding: [50, 50] });
+        mapa.fitBounds(bounds, { padding: [40, 40] });
+    } else {
+        mapa.fitBounds(lineaTramoL2Polyline.getBounds(), { padding: [40, 40] });
     }
 }
 
