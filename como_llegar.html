@@ -81,8 +81,22 @@
                     </button>
 
                     <!-- Botón de Rastreo de Colectivos -->
-                    <button id="btn-rastreo" onclick="alternarRastreoColectivos()" style="flex: 1; padding: 10px; border-radius: 8px; background: white; color: #333; border: 2px solid #ef4444; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 5px; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                        🚌❌ Rastreo Off
+                    <button id="btn-rastreo" class="btn-rastreo" onclick="alternarRastreoColectivos()" aria-pressed="false" aria-label="Activar o desactivar el rastreo de colectivos">
+                        <span class="btn-rastreo-icono" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="16" height="13" rx="3"></rect>
+                                <path d="M3 10h16"></path>
+                                <circle cx="7.5" cy="14.5" r="1.4"></circle>
+                                <circle cx="16.5" cy="14.5" r="1.4"></circle>
+                                <path d="M9 17.5h6"></path>
+                                <path d="M8 4V2M16 4V2"></path>
+                            </svg>
+                        </span>
+                        <span class="btn-rastreo-texto">
+                            <span class="btn-rastreo-titulo">Rastreo de colectivos</span>
+                            <span class="btn-rastreo-estado">Simulación apagada</span>
+                        </span>
+                        <span class="btn-rastreo-switch" aria-hidden="true"></span>
                     </button>
 
                     <!-- Contenedor dinámico donde JS va a inyectar el botón de Escala cuando sea necesario -->
@@ -153,8 +167,26 @@
     </div>
 
     <!-- Scripts de la aplicación -->
-    <script src="script/como_llegar.js"></script>
-    <script src="panel/main.js" defer></script>
+    <!-- "Cómo llegar" está partido en 8 archivos, se cargan en este orden:
+         1. estado       → las variables que comparten todas las partes
+         2. utilidades   → las fórmulas (distancias, tiempo, texto)
+         3. api          → la carga de datos desde la API
+         4. horarios     → la grilla y el cálculo de los horarios estimados
+         5. mapa         → todo lo que se dibuja en el mapa
+         6. planificador → la búsqueda de rutas y el mejor viaje
+         7. simulador    → el rastreador de colectivos
+         8. inicio       → el arranque de la página
+         script/dias.js va primero porque define resolverDiaDeServicio(),
+         que se usa para saber qué día de servicio es hoy. -->
     <script src="script/dias.js"></script>
+    <script src="script/como_llegar/estado.js"></script>
+    <script src="script/como_llegar/utilidades.js"></script>
+    <script src="script/como_llegar/api.js"></script>
+    <script src="script/como_llegar/horarios.js"></script>
+    <script src="script/como_llegar/mapa.js"></script>
+    <script src="script/como_llegar/planificador.js"></script>
+    <script src="script/como_llegar/simulador.js"></script>
+    <script src="script/como_llegar/inicio.js"></script>
+    <script src="panel/main.js" defer></script>
 </body>
 </html>
