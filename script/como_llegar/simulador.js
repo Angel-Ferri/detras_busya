@@ -37,11 +37,39 @@ function alternarRastreoColectivos() {
     }
 
     if (rastreoActivo) {
+        // Intentar encontrar una línea para rastrear
+        if (!recorridoActual && typeof mejorViajeActual !== 'undefined' && mejorViajeActual) {
+            if (mejorViajeActual.tipo === 'directo' && mejorViajeActual.lineaKey) {
+                if (datosLineasCargados[mejorViajeActual.lineaKey]) {
+                    recorridoActual = datosLineasCargados[mejorViajeActual.lineaKey];
+                    recorridoActual.key = mejorViajeActual.lineaKey;
+                }
+            } else if (mejorViajeActual.tipo === 'transbordo' && mejorViajeActual.L1 && mejorViajeActual.L1.key) {
+                if (datosLineasCargados[mejorViajeActual.L1.key]) {
+                    recorridoActual = datosLineasCargados[mejorViajeActual.L1.key];
+                    recorridoActual.key = mejorViajeActual.L1.key;
+                }
+            }
+        }
+        if (!recorridoActual) {
+            const sel = document.getElementById('select-linea');
+            if (sel && sel.value && datosLineasCargados[sel.value]) {
+                recorridoActual = datosLineasCargados[sel.value];
+                recorridoActual.key = sel.value;
+            }
+        }
         if (recorridoActual) {
             activarRastreoColectivos();
         } else {
-            // No hay línea elegida todavía: avisamos sin romper nada.
-            console.info('El rastreador quedó prendido, pero todavía no hay una línea seleccionada.');
+            console.info('El rastreador quedó prendido, pero no hay una línea seleccionada.');
+            rastreoActivo = true;
+            if (btn) {
+                btn.setAttribute('aria-pressed', 'true');
+                btn.classList.add('activo');
+                const estado = btn.querySelector('.btn-rastreo-estado');
+                if (estado) estado.textContent = 'Simulando en vivo';
+            }
+            activarRastreoColectivos();
         }
     } else {
         detenerRastreoColectivos();
@@ -193,8 +221,11 @@ function actualizarPosicionColectivos() {
             destino: nombreDestino,
             proximaParada: proximaParada,
             minRestantesProxima: minRestantesProxima,
-            distancia: distanciaAlUsuario
+            distancia: distanciaAlUsuario,
+            lineaKey: keyLinea,
+            lineaNombre: lineaDatos.nombre || recorridoActual.nombre
         });
+        }
     }
 
     // El colectivo más cercano al usuario va primero.
@@ -227,9 +258,10 @@ function actualizarPosicionColectivos() {
             ? '¡Llegando!'
             : 'en ~' + colectivo.minRestantesProxima + ' min';
 
+        const nombreLineaPop = colectivo.lineaNombre || (recorridoActual ? recorridoActual.nombre : '');
         const contenidoPopup = `
             <div style="text-align:center; min-width: 170px;">
-                <b>${recorridoActual.nombre}</b><br>
+                <b>${nombreLineaPop}</b><br>
                 <b style="color:${index === 0 ? '#dc2626' : (index === 1 ? '#2563eb' : '#475569')};">${etiqueta}</b><br>
                 <hr style="margin: 5px 0; border: 0; border-top: 1px solid #ccc;">
                 <span style="color: #059669; font-weight: bold;">🚏 Próxima parada:</span><br>
