@@ -1,0 +1,1641 @@
+{
+  "_instrucciones": "Archivo de paradas editado a mano. Cada parada necesita nombre, lat y lng. El orden de la lista es el orden del recorrido: si agregas una parada, insertala en la posicion correcta. La app compara tu GPS contra estas coordenadas.",
+  "_actualizado": "2026-10-24",
+  "lineas": {
+    "lineaa": {
+      "nombre": "Linea A",
+      "paradas": [
+        {
+          "nombre": "Av. los Alamos 2380",
+          "lat": -33.651248,
+          "lng": -65.450809
+        },
+        {
+          "nombre": "Los Alamos y Olagaray",
+          "lat": -33.653379,
+          "lng": -65.451509
+        },
+        {
+          "nombre": "Los Alamos y Paul Harris",
+          "lat": -33.656925,
+          "lng": -65.452679
+        },
+        {
+          "nombre": "Club San Martín",
+          "lat": -33.660958,
+          "lng": -65.45496
+        },
+        {
+          "nombre": "Origone y Av. Mitre",
+          "lat": -33.662095,
+          "lng": -65.458463
+        },
+        {
+          "nombre": "Hilario Cuadros y Belgrano",
+          "lat": -33.663221,
+          "lng": -65.461689
+        },
+        {
+          "nombre": "Terminal de Omnibus",
+          "lat": -33.664702,
+          "lng": -65.466397
+        },
+        {
+          "nombre": "Las Heras y Teodoro Felds",
+          "lat": -33.665223,
+          "lng": -65.46365
+        },
+        {
+          "nombre": "Arenales y Pedernera",
+          "lat": -33.666837,
+          "lng": -65.460375
+        },
+        {
+          "nombre": "Avenida Mitre y Paraguay",
+          "lat": -33.667988,
+          "lng": -65.460007
+        },
+        {
+          "nombre": "Avenida Mitre y San Luis",
+          "lat": -33.670592,
+          "lng": -65.460761
+        },
+        {
+          "nombre": "Avenida Mitre y La Rioja",
+          "lat": -33.673342,
+          "lng": -65.461628
+        },
+        {
+          "nombre": "Avenida Mitre Y Maipú",
+          "lat": -33.675088,
+          "lng": -65.462047
+        },
+        {
+          "nombre": "Avenida Mitre y Libertad",
+          "lat": -33.676678,
+          "lng": -65.462643
+        },
+        {
+          "nombre": "Avenida Mitre y Necochea",
+          "lat": -33.678693,
+          "lng": -65.463269
+        },
+        {
+          "nombre": "Avenida Mitre y Córdoba",
+          "lat": -33.680488,
+          "lng": -65.463827
+        },
+        {
+          "nombre": "Rivadavia y Pedernera",
+          "lat": -33.681752,
+          "lng": -65.465321
+        },
+        {
+          "nombre": "Balcarce y Urquiza",
+          "lat": -33.682749,
+          "lng": -65.466579
+        },
+        {
+          "nombre": "Las Heras y Marconi",
+          "lat": -33.68319,
+          "lng": -65.469028
+        },
+        {
+          "nombre": "Las Heras y Pescadores",
+          "lat": -33.684901,
+          "lng": -65.469527
+        },
+        {
+          "nombre": "Las Heras y Riobamba",
+          "lat": -33.686658,
+          "lng": -65.470006
+        },
+        {
+          "nombre": "Las Heras y Potosí",
+          "lat": -33.688463,
+          "lng": -65.470588
+        },
+        {
+          "nombre": "Ayacucho y Belgrano",
+          "lat": -33.689514,
+          "lng": -65.469857
+        },
+        {
+          "nombre": "Miguel B. Pastor y Lavalle",
+          "lat": -33.69024,
+          "lng": -65.4667
+        },
+        {
+          "nombre": "Uruguay y Agüero",
+          "lat": -33.696598,
+          "lng": -65.450436
+        },
+        {
+          "nombre": "Uruguay y Guido",
+          "lat": -33.697122,
+          "lng": -65.447999
+        },
+        {
+          "nombre": "Gdor. Besso y Landaburu",
+          "lat": -33.699262,
+          "lng": -65.446552
+        },
+        {
+          "nombre": "Uruguay y Agüero",
+          "lat": -33.696163,
+          "lng": -65.451073
+        },
+        {
+          "nombre": "Uruguay y Gral. Guido",
+          "lat": -33.696859,
+          "lng": -65.44794
+        },
+        {
+          "nombre": "Uruguay y Guayaquil",
+          "lat": -33.695479,
+          "lng": -65.45431
+        },
+        {
+          "nombre": "Pte. Perón y Av. Pringles",
+          "lat": -33.691677,
+          "lng": -65.455491
+        },
+        {
+          "nombre": "Pte. Perón y 1 de Mayo",
+          "lat": -33.694078,
+          "lng": -65.456184
+        },
+        {
+          "nombre": "Av. Pringles y Bolivia",
+          "lat": -33.690918,
+          "lng": -65.457728
+        },
+        {
+          "nombre": "Av. Pringles y Bélgica",
+          "lat": -33.690468,
+          "lng": -65.459895
+        },
+        {
+          "nombre": "Av. Pringles y San Martín",
+          "lat": -33.689695,
+          "lng": -65.464135
+        },
+        {
+          "nombre": "Av. Pringles y Lavalle",
+          "lat": -33.689147,
+          "lng": -65.466337
+        },
+        {
+          "nombre": "Potosí y Balcarce",
+          "lat": -33.688729,
+          "lng": -65.468418
+        },
+        {
+          "nombre": "León Guillet y General Paz",
+          "lat": -33.688742,
+          "lng": -65.46468
+        },
+        {
+          "nombre": "Leon Guillet y 9 de Julio",
+          "lat": -33.689146,
+          "lng": -65.462708
+        },
+        {
+          "nombre": "León Guillet e Italia",
+          "lat": -33.689654,
+          "lng": -65.46046
+        },
+        {
+          "nombre": "León Guillet y Brasil",
+          "lat": -33.690119,
+          "lng": -65.458405
+        },
+        {
+          "nombre": "León Guillet y Europa",
+          "lat": -33.69057,
+          "lng": -65.456308
+        },
+        {
+          "nombre": "Guayaquil y León Guillet",
+          "lat": -33.691025,
+          "lng": -65.453025
+        },
+        {
+          "nombre": "Buenos Aires y Guayaquil",
+          "lat": -33.689552,
+          "lng": -65.452268
+        },
+        {
+          "nombre": "Buenos Aires y Olloqui",
+          "lat": -33.68992,
+          "lng": -65.450597
+        },
+        {
+          "nombre": "Esteban Güero y León Guillet",
+          "lat": -33.691616,
+          "lng": -65.450002
+        },
+        {
+          "nombre": "R. A. Valdés y Landaburu",
+          "lat": -33.699064,
+          "lng": -65.446325
+        },
+        {
+          "nombre": "Av. Pringles y Suipacha",
+          "lat": -33.69003,
+          "lng": -65.462052
+        },
+        {
+          "nombre": "Rufino Barreiro y Venezuela",
+          "lat": -33.698392,
+          "lng": -65.445201
+        },
+        {
+          "nombre": "Av. Pringles y Rufino Barreiro",
+          "lat": -33.693946,
+          "lng": -65.443643
+        },
+        {
+          "nombre": "Av. Jorge Newbery y Amaro Galán",
+          "lat": -33.695083,
+          "lng": -65.439472
+        },
+        {
+          "nombre": "Av. Newbery y Ángel Pes",
+          "lat": -33.698316,
+          "lng": -65.4329
+        },
+        {
+          "nombre": "Moretti antes de Av. Jorge Newbery",
+          "lat": -33.700342,
+          "lng": -65.429419
+        },
+        {
+          "nombre": "Héroes de Malvinas y Cap. Bustos",
+          "lat": -33.702211,
+          "lng": -65.428513
+        },
+        {
+          "nombre": "Héroes de Malvinas y Gazari",
+          "lat": -33.703644,
+          "lng": -65.428986
+        },
+        {
+          "nombre": "Héroes de Malvinas y Cap. Bolzán",
+          "lat": -33.705343,
+          "lng": -65.429474
+        },
+        {
+          "nombre": "Héroes de Malvinas y Vásquez",
+          "lat": -33.708483,
+          "lng": -65.430503
+        },
+        {
+          "nombre": "Freites y Moretti",
+          "lat": -33.709773,
+          "lng": -65.43274
+        },
+        {
+          "nombre": "Ibarlucea y Freites",
+          "lat": -33.70879,
+          "lng": -65.435438
+        },
+        {
+          "nombre": "Aubert e Ibarlucea",
+          "lat": -33.706984,
+          "lng": -65.434811
+        },
+        {
+          "nombre": "Aubert y T. Escudero",
+          "lat": -33.704878,
+          "lng": -65.433994
+        },
+        {
+          "nombre": "Aubert y Valdez",
+          "lat": -33.701865,
+          "lng": -65.433097
+        },
+        {
+          "nombre": "1 de Mayo y Aubert",
+          "lat": -33.699622,
+          "lng": -65.432403
+        },
+        {
+          "nombre": "P. Diaz y Uruguay",
+          "lat": -33.699812,
+          "lng": -65.438831
+        },
+        {
+          "nombre": "Valdés y P. Diaz",
+          "lat": -33.701406,
+          "lng": -65.439493
+        },
+        {
+          "nombre": "Pirker y Venezuela",
+          "lat": -33.700464,
+          "lng": -65.440244
+        },
+        {
+          "nombre": "Pirker y 1 de Mayo",
+          "lat": -33.698196,
+          "lng": -65.439607
+        },
+        {
+          "nombre": "Miguel B. Pastor y Pirker",
+          "lat": -33.696227,
+          "lng": -65.439146
+        },
+        {
+          "nombre": "Miguel B. Pastor y Conc. Vinuesa",
+          "lat": -33.695503,
+          "lng": -65.441727
+        },
+        {
+          "nombre": "Rufino Barreiro y Zoilo Concha",
+          "lat": -33.695803,
+          "lng": -65.444173
+        },
+        {
+          "nombre": "Rufino Barreiro y Uruguay",
+          "lat": -33.698088,
+          "lng": -65.444791
+        },
+        {
+          "nombre": "Gral Paz e Yrigoyen",
+          "lat": -33.687874,
+          "lng": -65.464605
+        },
+        {
+          "nombre": "Gral Paz y Tucumán",
+          "lat": -33.686057,
+          "lng": -65.464039
+        },
+        {
+          "nombre": "Gral Paz y Édison",
+          "lat": -33.684168,
+          "lng": -65.463433
+        },
+        {
+          "nombre": "Gral Paz y Rafael Cortez",
+          "lat": -33.682334,
+          "lng": -65.462902
+        },
+        {
+          "nombre": "Gral Paz y Córdoba",
+          "lat": -33.680626,
+          "lng": -65.462359
+        },
+        {
+          "nombre": "Gral Paz y Necochea",
+          "lat": -33.678801,
+          "lng": -65.461844
+        },
+        {
+          "nombre": "Gral Paz y Sarmiento",
+          "lat": -33.677009,
+          "lng": -65.46127
+        },
+        {
+          "nombre": "General Paz y Maipu",
+          "lat": -33.675004,
+          "lng": -65.460745
+        },
+        {
+          "nombre": "Gral Paz y Madre Cabrini",
+          "lat": -33.671772,
+          "lng": -65.459762
+        },
+        {
+          "nombre": "Gral Paz y Paraguay",
+          "lat": -33.667991,
+          "lng": -65.458577
+        },
+        {
+          "nombre": "Gral Paz y Corrientes",
+          "lat": -33.669777,
+          "lng": -65.459059
+        },
+        {
+          "nombre": "Gral Paz y Santa Fe",
+          "lat": -33.666187,
+          "lng": -65.458051
+        },
+        {
+          "nombre": "Gral Paz y Vte. Dupuy",
+          "lat": -33.664449,
+          "lng": -65.457608
+        },
+        {
+          "nombre": "Zavala ortiz y San Martín",
+          "lat": -33.663944,
+          "lng": -65.456173
+        },
+        {
+          "nombre": "Zavala Ortiz y Suipacha",
+          "lat": -33.664377,
+          "lng": -65.454178
+        },
+        {
+          "nombre": "Los Álamos y Carlos Pellegrini",
+          "lat": -33.658074,
+          "lng": -65.452755
+        },
+        {
+          "nombre": "Los Álamos y Mtro. Berrondo",
+          "lat": -33.656145,
+          "lng": -65.452187
+        },
+        {
+          "nombre": "Los Álamos y Olagaray",
+          "lat": -33.653631,
+          "lng": -65.451371
+        },
+        {
+          "nombre": "Los Álamos y San Roque",
+          "lat": -33.648955,
+          "lng": -65.449789
+        }
+      ]
+    },
+    "lineae": {
+      "nombre": "Linea E",
+      "paradas": [
+        {
+          "nombre": "Av. Adolfo Enrique Pérez y Mahatma Gandhi",
+          "lat": -33.6881608,
+          "lng": -65.5009448
+        },
+        {
+          "nombre": "25 de Mayo y Estado de Israel",
+          "lat": -33.666476,
+          "lng": -65.466503
+        },
+        {
+          "nombre": "25 de mayo y Sucre",
+          "lat": -33.668157,
+          "lng": -65.466952
+        },
+        {
+          "nombre": "Almafuerte y Mulleady",
+          "lat": -33.669919,
+          "lng": -65.468509
+        },
+        {
+          "nombre": "Colon y Las Heras",
+          "lat": -33.671384,
+          "lng": -65.466181
+        },
+        {
+          "nombre": "Manuel Lainez y balcarce",
+          "lat": -33.673417,
+          "lng": -65.463866
+        },
+        {
+          "nombre": "Balcarce y Chacabuco",
+          "lat": -33.674672,
+          "lng": -65.464291
+        },
+        {
+          "nombre": "Balcarce y Libertad",
+          "lat": -33.676577,
+          "lng": -65.464789
+        },
+        {
+          "nombre": "Balcarce y Gob. Alric",
+          "lat": -33.678212,
+          "lng": -65.465397
+        },
+        {
+          "nombre": "Balcarce y Urquiza",
+          "lat": -33.682749,
+          "lng": -65.466579
+        },
+        {
+          "nombre": "Balcarce y Pescadores",
+          "lat": -33.685396,
+          "lng": -65.467478
+        },
+        {
+          "nombre": "Potosí y Balcarce",
+          "lat": -33.688712,
+          "lng": -65.468483
+        },
+        {
+          "nombre": "Balcarce y Riobamba",
+          "lat": -33.686933,
+          "lng": -65.467868
+        },
+        {
+          "nombre": "España Pueyrredón",
+          "lat": -33.6875,
+          "lng": -65.471167
+        },
+        {
+          "nombre": "Riobamba y 25 de Mayo",
+          "lat": -33.686089,
+          "lng": -65.471773
+        },
+        {
+          "nombre": "Riobamba y Dr Mestre",
+          "lat": -33.685571,
+          "lng": -65.474085
+        },
+        {
+          "nombre": "Riobamba y La madrid",
+          "lat": -33.685143,
+          "lng": -65.47621
+        },
+        {
+          "nombre": "Montevideo y Pescadores",
+          "lat": -33.683345,
+          "lng": -65.47688
+        },
+        {
+          "nombre": "Montevideo y Marconi",
+          "lat": -33.681549,
+          "lng": -65.476371
+        },
+        {
+          "nombre": "Montevideo y Rivadavia",
+          "lat": -33.679743,
+          "lng": -65.475834
+        },
+        {
+          "nombre": "Montevideo y Coronel Iseas",
+          "lat": -33.677948,
+          "lng": -65.475378
+        },
+        {
+          "nombre": "Cnel. Iseas y San Lorenzo",
+          "lat": -33.677305,
+          "lng": -65.477409
+        },
+        {
+          "nombre": "Cnel. Iseas y Güemes",
+          "lat": -33.676836,
+          "lng": -65.479528
+        },
+        {
+          "nombre": "Cnel. Iseas y Peñaloza",
+          "lat": -33.676363,
+          "lng": -65.481802
+        },
+        {
+          "nombre": "Cnel. Iseas y Perú",
+          "lat": -33.675912,
+          "lng": -65.483991
+        },
+        {
+          "nombre": "Betbeder y Garcia Lorca",
+          "lat": -33.675622,
+          "lng": -65.489012
+        },
+        {
+          "nombre": "Betbeder y Reynaldo Pastor",
+          "lat": -33.674845,
+          "lng": -65.492746
+        },
+        {
+          "nombre": "Betbeder y Calle 67",
+          "lat": -33.674318,
+          "lng": -65.494918
+        },
+        {
+          "nombre": "Betbeder y Dr Jorge Roca",
+          "lat": -33.673956,
+          "lng": -65.49679
+        },
+        {
+          "nombre": "Betbeder y Otogalli",
+          "lat": -33.673617,
+          "lng": -65.49875
+        },
+        {
+          "nombre": "Escuela Agraria",
+          "lat": -33.677882,
+          "lng": -65.503391
+        },
+        {
+          "nombre": "Frente Agraria",
+          "lat": -33.677606,
+          "lng": -65.502761
+        },
+        {
+          "nombre": "Betbeder y Reynaldo pastor",
+          "lat": -33.675077,
+          "lng": -65.492939
+        },
+        {
+          "nombre": "Betbeder y García Lorca",
+          "lat": -33.675903,
+          "lng": -65.489221
+        },
+        {
+          "nombre": "Betbeder y Sallorenzo",
+          "lat": -33.67668,
+          "lng": -65.485396
+        },
+        {
+          "nombre": "Betbeder y Pablo Lucero",
+          "lat": -33.677175,
+          "lng": -65.483202
+        },
+        {
+          "nombre": "Betbeder y Güemes",
+          "lat": -33.677836,
+          "lng": -65.479994
+        },
+        {
+          "nombre": "Betbeder y San Lorenzo",
+          "lat": -33.678291,
+          "lng": -65.477843
+        },
+        {
+          "nombre": "Betbeder y Montevideo",
+          "lat": -33.6787,
+          "lng": -65.475958
+        },
+        {
+          "nombre": "Montevideo y Urquiza",
+          "lat": -33.680387,
+          "lng": -65.476354
+        },
+        {
+          "nombre": "Montevideo y Fuerte Constitucional",
+          "lat": -33.682166,
+          "lng": -65.476829
+        },
+        {
+          "nombre": "Montevideo y Junin",
+          "lat": -33.683976,
+          "lng": -65.477312
+        },
+        {
+          "nombre": "Junin y Dr. Mestre",
+          "lat": -33.684683,
+          "lng": -65.474163
+        },
+        {
+          "nombre": "Junin y 25 de Mayo",
+          "lat": -33.68512,
+          "lng": -65.472049
+        },
+        {
+          "nombre": "Junin y las Heras",
+          "lat": -33.685594,
+          "lng": -65.469774
+        },
+        {
+          "nombre": "Las Heras y Riobamba",
+          "lat": -33.686614,
+          "lng": -65.469988
+        },
+        {
+          "nombre": "Las Heras y Potosí",
+          "lat": -33.688266,
+          "lng": -65.47054
+        },
+        {
+          "nombre": "Ayacucho y Belgrano",
+          "lat": -33.689539,
+          "lng": -65.469774
+        },
+        {
+          "nombre": "Miguel B Pastor y Lavalle",
+          "lat": -33.690227,
+          "lng": -65.46675
+        },
+        {
+          "nombre": "Gral paz y Pringles",
+          "lat": -33.689725,
+          "lng": -65.465102
+        },
+        {
+          "nombre": "Gral. Paz e Yrigoyen",
+          "lat": -33.687918,
+          "lng": -65.464628
+        },
+        {
+          "nombre": "Gral. Paz y Tucumán",
+          "lat": -33.68601,
+          "lng": -65.46402
+        },
+        {
+          "nombre": "Gral. Paz y Edison",
+          "lat": -33.684022,
+          "lng": -65.463379
+        },
+        {
+          "nombre": "Gral. Paz y Necochea",
+          "lat": -33.678753,
+          "lng": -65.461829
+        },
+        {
+          "nombre": "Gral. Paz y Sarmiento",
+          "lat": -33.676966,
+          "lng": -65.461232
+        },
+        {
+          "nombre": "Remedios Escalada y San Martín",
+          "lat": -33.676421,
+          "lng": -65.460056
+        },
+        {
+          "nombre": "Remedios Escalada y Suipacha",
+          "lat": -33.676836,
+          "lng": -65.458148
+        },
+        {
+          "nombre": "Remedios Escalada y Bélgica",
+          "lat": -33.677305,
+          "lng": -65.456013
+        },
+        {
+          "nombre": "Remedios Escalada y Bolivia",
+          "lat": -33.677251431407974,
+          "lng": -65.45599963867141
+        },
+        {
+          "nombre": "Europa y Maipú",
+          "lat": -33.67714,
+          "lng": -65.452344
+        },
+        {
+          "nombre": "Maipú y 9 de Julio",
+          "lat": -33.675686,
+          "lng": -65.458579
+        },
+        {
+          "nombre": "9 de Julio y La Rioja",
+          "lat": -33.674093,
+          "lng": -65.458245
+        },
+        {
+          "nombre": "9 de Julio y Cabrini",
+          "lat": -33.672289,
+          "lng": -65.457665
+        },
+        {
+          "nombre": "San Luis y Suipacha",
+          "lat": -33.67145,
+          "lng": -65.456506
+        },
+        {
+          "nombre": "San Luis y Bélgica",
+          "lat": -33.67186,
+          "lng": -65.454318
+        },
+        {
+          "nombre": "Brasil y Corrientes",
+          "lat": -33.671391,
+          "lng": -65.452897
+        },
+        {
+          "nombre": "Brasil y Arenales",
+          "lat": -33.668694,
+          "lng": -65.452103
+        },
+        {
+          "nombre": "Santa Fe y Brasil",
+          "lat": -33.667444,
+          "lng": -65.45206
+        },
+        {
+          "nombre": "Santa Fé y Suipacha",
+          "lat": -33.66689,
+          "lng": -65.455107
+        },
+        {
+          "nombre": "Santa Fé y San Martín",
+          "lat": -33.666462,
+          "lng": -65.45706
+        },
+        {
+          "nombre": "Gral. paz y Dupuy",
+          "lat": -33.664381,
+          "lng": -65.457588
+        },
+        {
+          "nombre": "Gral. Paz y L. de la Torre",
+          "lat": -33.661894,
+          "lng": -65.456876
+        },
+        {
+          "nombre": "Av. Origone y Mitre",
+          "lat": -33.661925,
+          "lng": -65.458025
+        },
+        {
+          "nombre": "Av. Origone y Belgrano",
+          "lat": -33.663045,
+          "lng": -65.461743
+        },
+        {
+          "nombre": "Hilario Cuadro y Pueyrredón",
+          "lat": -33.664312,
+          "lng": -65.464512
+        },
+        {
+          "nombre": "Terminal de ómnibus",
+          "lat": -33.6647,
+          "lng": -65.466346
+        }
+      ]
+    },
+    "lineaeste": {
+      "nombre": "Linea Este",
+      "paradas": [
+        {
+          "nombre": "Ecuador y Balcarce",
+          "lat": -33.664785,
+          "lng": -65.461232
+        },
+        {
+          "nombre": "Balcarce y Estado de Israel",
+          "lat": -33.667472,
+          "lng": -65.462117
+        },
+        {
+          "nombre": "Balcarce y 3 de Febrero",
+          "lat": -33.670178,
+          "lng": -65.462896
+        },
+        {
+          "nombre": "Balcarce y Entre Ríos",
+          "lat": -33.672882,
+          "lng": -65.463676
+        },
+        {
+          "nombre": "Balcarce y Chacabuco",
+          "lat": -33.67471887096249,
+          "lng": -65.46411864111919
+        },
+        {
+          "nombre": "Remedios de Escalada y Av. Mitre",
+          "lat": -33.675975,
+          "lng": -65.462129
+        },
+        {
+          "nombre": "San Martín y Sarmiento",
+          "lat": -33.677325,
+          "lng": -65.460483
+        },
+        {
+          "nombre": "San Martín y Necochea",
+          "lat": -33.679101,
+          "lng": -65.46104
+        },
+        {
+          "nombre": "San Martín y Córdoba",
+          "lat": -33.680903,
+          "lng": -65.461598
+        },
+        {
+          "nombre": "San Martín y Rafael Cortez",
+          "lat": -33.682689,
+          "lng": -65.462047
+        },
+        {
+          "nombre": "San Martín y Édison",
+          "lat": -33.684471,
+          "lng": -65.462593
+        },
+        {
+          "nombre": "San Martín y Tucumán",
+          "lat": -33.686241,
+          "lng": -65.463121
+        },
+        {
+          "nombre": "Buenos Aires y Bélgica",
+          "lat": -33.688062,
+          "lng": -65.459248
+        },
+        {
+          "nombre": "Buenos Aires y Europa",
+          "lat": -33.688777,
+          "lng": -65.456029
+        },
+        {
+          "nombre": "Buenos Aires y Guayaquil",
+          "lat": -33.68956,
+          "lng": -65.452397
+        },
+        {
+          "nombre": "Buenos Aires y Olloqui",
+          "lat": -33.690013,
+          "lng": -65.450479
+        },
+        {
+          "nombre": "Esteban Agüero y León Guillet",
+          "lat": -33.691555,
+          "lng": -65.449989
+        },
+        {
+          "nombre": "León Guillet y Besso",
+          "lat": -33.692847,
+          "lng": -65.445842
+        },
+        {
+          "nombre": "León Guillet y Rufino Barreiro",
+          "lat": -33.693311,
+          "lng": -65.443756
+        },
+        {
+          "nombre": "Amaro Galán y Tucumán",
+          "lat": -33.691802,
+          "lng": -65.438424
+        },
+        {
+          "nombre": "Amaro Galán y Salta",
+          "lat": -33.690669,
+          "lng": -65.438102
+        },
+        {
+          "nombre": "Amaro Galán y Homero Manzi",
+          "lat": -33.687839,
+          "lng": -65.437231
+        },
+        {
+          "nombre": "Ardiles y Camilo S. Quiroga",
+          "lat": -33.689133,
+          "lng": -65.426094
+        },
+        {
+          "nombre": "Camilo S. Quiroga y Remedios de Escalada",
+          "lat": -33.684253,
+          "lng": -65.424667
+        },
+        {
+          "nombre": "Maipú y Sgto. Tránsito Gauna",
+          "lat": -33.683594,
+          "lng": -65.423368
+        },
+        {
+          "nombre": "Maipú y Julio Mediavilla",
+          "lat": -33.682708,
+          "lng": -65.427317
+        },
+        {
+          "nombre": "Maipú y Ma. Echevarría de Vidal",
+          "lat": -33.681688,
+          "lng": -65.430653
+        },
+        {
+          "nombre": "Maipú y Amaro Galán",
+          "lat": -33.680724,
+          "lng": -65.435081
+        },
+        {
+          "nombre": "Maipú y F. Vinuesa",
+          "lat": -33.680238,
+          "lng": -65.437409
+        },
+        {
+          "nombre": "Rufino Barreiro y San Luis",
+          "lat": -33.675653,
+          "lng": -65.438031
+        },
+        {
+          "nombre": "Rufino Barreiro y Paraguay",
+          "lat": -33.672751,
+          "lng": -65.437398
+        },
+        {
+          "nombre": "Nelson y Arenales",
+          "lat": -33.670852,
+          "lng": -65.442355
+        },
+        {
+          "nombre": "Nelson y Colombia",
+          "lat": -33.668972,
+          "lng": -65.441915
+        },
+        {
+          "nombre": "Zavala Ortiz y Gdor. Besso",
+          "lat": -33.667914,
+          "lng": -65.438176
+        },
+        {
+          "nombre": "Landaburu y J J Paso",
+          "lat": -33.667651,
+          "lng": -65.437007
+        },
+        {
+          "nombre": "Juan B Justo y Besso",
+          "lat": -33.666798,
+          "lng": -65.438042
+        },
+        {
+          "nombre": "Nelson y Centenario",
+          "lat": -33.663622,
+          "lng": -65.44029
+        },
+        {
+          "nombre": "Nelson y Carlos Pellegrini",
+          "lat": -33.660967,
+          "lng": -65.439499
+        },
+        {
+          "nombre": "Carlos Pellegrini y Tallaferro",
+          "lat": -33.661164,
+          "lng": -65.43849
+        },
+        {
+          "nombre": "Rufino Barreiro y Tte. Pereyra",
+          "lat": -33.659064,
+          "lng": -65.432936
+        },
+        {
+          "nombre": "Frente Hospital de referencia Eva Perón",
+          "lat": -33.659363,
+          "lng": -65.429589
+        },
+        {
+          "nombre": "Carlos Pellegrini y Nelson",
+          "lat": -33.660763,
+          "lng": -65.43946
+        },
+        {
+          "nombre": "Zavala Ortiz y Gral Guido",
+          "lat": -33.667677,
+          "lng": -65.438485
+        },
+        {
+          "nombre": "Maipu y Angel Pez",
+          "lat": -33.682901,
+          "lng": -65.428021
+        },
+        {
+          "nombre": "Pasaje montero y Homero Manzi",
+          "lat": -33.688324,
+          "lng": -65.433872
+        },
+        {
+          "nombre": "Tucuman y Felipe Vinuesa",
+          "lat": -33.691091,
+          "lng": -65.440439
+        },
+        {
+          "nombre": "Tucuman y Rufino Barreiro",
+          "lat": -33.690555,
+          "lng": -65.442703
+        },
+        {
+          "nombre": "Tucuman y Tallaferro",
+          "lat": -33.689636,
+          "lng": -65.44693
+        },
+        {
+          "nombre": "Tallaferro e Hipolito Yrigoyen",
+          "lat": -33.691225,
+          "lng": -65.44767
+        },
+        {
+          "nombre": "Hipólito Yrigoyen y A. Agüero",
+          "lat": -33.690872,
+          "lng": -65.449526
+        },
+        {
+          "nombre": "Hipólito Yrigoyen y Guayaquil",
+          "lat": -33.690207,
+          "lng": -65.452756
+        },
+        {
+          "nombre": "Hipólito Yrigoyen y Perón",
+          "lat": -33.689703,
+          "lng": -65.454928
+        },
+        {
+          "nombre": "Hipólito Yrigoyen y Brasil",
+          "lat": -33.689082,
+          "lng": -65.458084
+        },
+        {
+          "nombre": "Hipólito Yrigoyen e Italia",
+          "lat": -33.688596,
+          "lng": -65.460251
+        },
+        {
+          "nombre": "Hipólito Yrigoyen y San Martín",
+          "lat": -33.687894,
+          "lng": -65.463689
+        },
+        {
+          "nombre": "Gral. Paz y Tucumán",
+          "lat": -33.686043,
+          "lng": -65.464028
+        },
+        {
+          "nombre": "Gral. Paz y Édison",
+          "lat": -33.68411,
+          "lng": -65.463408
+        },
+        {
+          "nombre": "Remedios Escalada y Bélgica",
+          "lat": -33.677364,
+          "lng": -65.455911
+        },
+        {
+          "nombre": "Maipú y Mitre",
+          "lat": -33.67503351206893,
+          "lng": -65.46176154439253
+        }
+      ]
+    },
+    "lineaoeste": {
+      "nombre": "Linea Oeste",
+      "paradas": [
+        {
+          "nombre": "Belgrano e Hilario Cuadros",
+          "lat": -33.663295,
+          "lng": -65.461743
+        },
+        {
+          "nombre": "Belgrano y Calle Angosta",
+          "lat": -33.661561,
+          "lng": -65.461242
+        },
+        {
+          "nombre": "Belgrano y Solis",
+          "lat": -33.660089,
+          "lng": -65.460815
+        },
+        {
+          "nombre": "Belgrano Y Tomás Jofré",
+          "lat": -33.658274,
+          "lng": -65.460313
+        },
+        {
+          "nombre": "Tomás Jofré y Pueyrerredón",
+          "lat": -33.657721,
+          "lng": -65.462373
+        },
+        {
+          "nombre": "Valentín Luco e Ivanowsky",
+          "lat": -33.658107,
+          "lng": -65.464796
+        },
+        {
+          "nombre": "Ivanowsky y Dr. Mestre",
+          "lat": -33.657857,
+          "lng": -65.466105
+        },
+        {
+          "nombre": "Ivanowsky y Montevideo",
+          "lat": -33.657207,
+          "lng": -65.469155
+        },
+        {
+          "nombre": "Montevideo y Pizarro",
+          "lat": -33.658962,
+          "lng": -65.46985
+        },
+        {
+          "nombre": "Montevideo y Bolivar",
+          "lat": -33.661514,
+          "lng": -65.470628
+        },
+        {
+          "nombre": "Montevideo y Ecuador",
+          "lat": -33.662523,
+          "lng": -65.470877
+        },
+        {
+          "nombre": "Ecuador y Sgto. Baigorria",
+          "lat": -33.663142,
+          "lng": -65.468853
+        },
+        {
+          "nombre": "Sgto. Baigorria y Braulio Moyano",
+          "lat": -33.664962,
+          "lng": -65.469355
+        },
+        {
+          "nombre": "Sgto. Baigorria e Intendente leyes",
+          "lat": -33.666587,
+          "lng": -65.469853
+        },
+        {
+          "nombre": "Sgto. Baigorria y 3 de Febrero",
+          "lat": -33.668378,
+          "lng": -65.470367
+        },
+        {
+          "nombre": "Sgto. Baigorria y Colón",
+          "lat": -33.670171,
+          "lng": -65.470881
+        },
+        {
+          "nombre": "Sgto. Baigorria y Chacabuco",
+          "lat": -33.672844,
+          "lng": -65.471716
+        },
+        {
+          "nombre": "Chacabuco y Montevideo",
+          "lat": -33.67233,
+          "lng": -65.473708
+        },
+        {
+          "nombre": "Chacabuco y San Lorenzo",
+          "lat": -33.67179,
+          "lng": -65.476019
+        },
+        {
+          "nombre": "Chacabuco y Güemes",
+          "lat": -33.671479,
+          "lng": -65.477956
+        },
+        {
+          "nombre": "Güemes y Entre Ríos",
+          "lat": -33.669874,
+          "lng": -65.477481
+        },
+        {
+          "nombre": "Güemes y Gral. Mulleady",
+          "lat": -33.668017,
+          "lng": -65.476998
+        },
+        {
+          "nombre": "Gral Mulleady y Juan Saa",
+          "lat": -33.667571,
+          "lng": -65.47842
+        },
+        {
+          "nombre": "Mulleady y Pablo Lucero",
+          "lat": -33.667156,
+          "lng": -65.480579
+        },
+        {
+          "nombre": "Sallorenzo y Mulleady",
+          "lat": -33.666968,
+          "lng": -65.482006
+        },
+        {
+          "nombre": "Sallorenzo y Colón",
+          "lat": -33.667754,
+          "lng": -65.482274
+        },
+        {
+          "nombre": "Sallorenzo y Entre Ríos",
+          "lat": -33.668605,
+          "lng": -65.482506
+        },
+        {
+          "nombre": "Sallorenzo y Chacabuco",
+          "lat": -33.670346,
+          "lng": -65.483011
+        },
+        {
+          "nombre": "Chacabuco y D. Bodo",
+          "lat": -33.669816,
+          "lng": -65.485194
+        },
+        {
+          "nombre": "Chacabuco y García Lorca",
+          "lat": -33.669427,
+          "lng": -65.487216
+        },
+        {
+          "nombre": "García Lorca y Pje. Araoz",
+          "lat": -33.670867,
+          "lng": -65.487863
+        },
+        {
+          "nombre": "García Lorca y Juan Llerena",
+          "lat": -33.672243,
+          "lng": -65.488045
+        },
+        {
+          "nombre": "Juan Llerena y D. Bodo",
+          "lat": -33.67282,
+          "lng": -65.486004
+        },
+        {
+          "nombre": "Juan Llerena y Sallorenzo",
+          "lat": -33.673226,
+          "lng": -65.483799
+        },
+        {
+          "nombre": "Juan Llerena y Pablo Lucero",
+          "lat": -33.673566,
+          "lng": -65.482185
+        },
+        {
+          "nombre": "Juan Llerena y Juan Saa",
+          "lat": -33.67403,
+          "lng": -65.480031
+        },
+        {
+          "nombre": "Juan Llerena y San Cayetano",
+          "lat": -33.674499,
+          "lng": -65.477896
+        },
+        {
+          "nombre": "Juan Llerena y Montevideo",
+          "lat": -33.675188,
+          "lng": -65.474701
+        },
+        {
+          "nombre": "Juan Llerena y Sgto. Baigorria",
+          "lat": -33.675662,
+          "lng": -65.472542
+        },
+        {
+          "nombre": "Juan Llerena y Almafuerte",
+          "lat": -33.676144,
+          "lng": -65.470437
+        },
+        {
+          "nombre": "Juan Llerena y Pueyrredón",
+          "lat": -33.676666,
+          "lng": -65.468146
+        },
+        {
+          "nombre": "Juan Llerena y Belgrano",
+          "lat": -33.677144,
+          "lng": -65.466231
+        },
+        {
+          "nombre": "Balcarce y Gdor. Alric",
+          "lat": -33.678212,
+          "lng": -65.465397
+        },
+        {
+          "nombre": "Balcarce y Coronel Iseas",
+          "lat": -33.680033,
+          "lng": -65.465869
+        },
+        {
+          "nombre": "Balcarce y Urquiza",
+          "lat": -33.682869,
+          "lng": -65.46662
+        },
+        {
+          "nombre": "San Martín y Édison",
+          "lat": -33.684505,
+          "lng": -65.462604
+        },
+        {
+          "nombre": "San Martín y Tucumán",
+          "lat": -33.68628,
+          "lng": -65.463135
+        },
+        {
+          "nombre": "San Martín e Yrigoyen",
+          "lat": -33.687857,
+          "lng": -65.463572
+        },
+        {
+          "nombre": "Pringles y San Martín",
+          "lat": -33.689689,
+          "lng": -65.464164
+        },
+        {
+          "nombre": "Lavalle y Av. Pringles",
+          "lat": -33.68916,
+          "lng": -65.466288
+        },
+        {
+          "nombre": "Potosí y Balcarce",
+          "lat": -33.688741,
+          "lng": -65.468362
+        },
+        {
+          "nombre": "Belgrano y España",
+          "lat": -33.687783,
+          "lng": -65.469037
+        },
+        {
+          "nombre": "Belgrano Y Junín",
+          "lat": -33.68601,
+          "lng": -65.468561
+        },
+        {
+          "nombre": "Belgrano y Fte. Constitucional",
+          "lat": -33.684216,
+          "lng": -65.468016
+        },
+        {
+          "nombre": "Belgrano y Urquiza",
+          "lat": -33.682503,
+          "lng": -65.467473
+        },
+        {
+          "nombre": "Belgrano y Betbeder",
+          "lat": -33.680559,
+          "lng": -65.466924
+        },
+        {
+          "nombre": "Belgrano y Juan W Gez",
+          "lat": -33.678752,
+          "lng": -65.466386
+        },
+        {
+          "nombre": "Belgrano y Juan Llerena",
+          "lat": -33.676924,
+          "lng": -65.465807
+        },
+        {
+          "nombre": "Belgrano y Chacabuco",
+          "lat": -33.674472,
+          "lng": -65.465072
+        },
+        {
+          "nombre": "Chacabuco y Pueyrredón",
+          "lat": -33.673812,
+          "lng": -65.467285
+        },
+        {
+          "nombre": "Chacabuco y Dr. Mestre",
+          "lat": -33.673026,
+          "lng": -65.470616
+        },
+        {
+          "nombre": "Chacabuco y Pablo Lucero",
+          "lat": -33.670718,
+          "lng": -65.481319
+        },
+        {
+          "nombre": "Chacabuco y Sallorenzo",
+          "lat": -33.670387,
+          "lng": -65.482763
+        },
+        {
+          "nombre": "Manuel Láinez y Lorca",
+          "lat": -33.668812,
+          "lng": -65.487064
+        },
+        {
+          "nombre": "Manuel Láinez y Bodo",
+          "lat": -33.669209,
+          "lng": -65.484994
+        },
+        {
+          "nombre": "Sallorenzo y Colon",
+          "lat": -33.667966,
+          "lng": -65.481918
+        },
+        {
+          "nombre": "3 de Febrero y Sallorenzo",
+          "lat": -33.66614,
+          "lng": -65.481436
+        },
+        {
+          "nombre": "Pablo Lucero y 3 de Febrero",
+          "lat": -33.666403,
+          "lng": -65.480282
+        },
+        {
+          "nombre": "# de Febrero y Juan Saa",
+          "lat": -33.666872,
+          "lng": -65.478135
+        },
+        {
+          "nombre": "3 de Febrero y Güemes",
+          "lat": -33.667135,
+          "lng": -65.476859
+        },
+        {
+          "nombre": "3 de Febrero y Montevideo",
+          "lat": -33.667929,
+          "lng": -65.472604
+        },
+        {
+          "nombre": "3 de febrero y Dr. Mestre",
+          "lat": -33.668621,
+          "lng": -65.469337
+        },
+        {
+          "nombre": "25 de Mayo y 3 de Febrero",
+          "lat": -33.669127,
+          "lng": -65.466817
+        },
+        {
+          "nombre": "25 de Mayo e Intendente leyes",
+          "lat": -33.667442,
+          "lng": -65.466307
+        },
+        {
+          "nombre": "25 de Mayo y B Moyano",
+          "lat": -33.665723,
+          "lng": -65.465771
+        },
+        {
+          "nombre": "Balcarce y Pescadores",
+          "lat": -33.685396,
+          "lng": -65.467478
+        },
+        {
+          "nombre": "Gral Paz y Pringles",
+          "lat": -33.689587,
+          "lng": -65.465084
+        },
+        {
+          "nombre": "Gral Paz e Yrigoyen",
+          "lat": -33.687826,
+          "lng": -65.464592
+        },
+        {
+          "nombre": "Balcarce y Riobamba",
+          "lat": -33.686978,
+          "lng": -65.467849
+        },
+        {
+          "nombre": "Miguel B Pastor y Lavalle",
+          "lat": -33.690256,
+          "lng": -65.46665
+        },
+        {
+          "nombre": "Gral Paz y Tucumán",
+          "lat": -33.68607,
+          "lng": -65.464037
+        },
+        {
+          "nombre": "Gral Paz y Édison",
+          "lat": -33.684067,
+          "lng": -65.463409
+        },
+        {
+          "nombre": "Gral Paz y Rafael Cortez",
+          "lat": -33.6824194175998,
+          "lng": -65.46303308323665
+        },
+        {
+          "nombre": "Gral Paz y Córdoba",
+          "lat": -33.680554,
+          "lng": -65.462339
+        },
+        {
+          "nombre": "Gral. Paz y Necochea",
+          "lat": -33.678709,
+          "lng": -65.461843
+        },
+        {
+          "nombre": "Gral Paz y Sarmiento",
+          "lat": -33.676899,
+          "lng": -65.461229
+        },
+        {
+          "nombre": "Remedios Escalada y San Martín",
+          "lat": -33.676467,
+          "lng": -65.460084
+        },
+        {
+          "nombre": "Remedios Escalada y Suipacha",
+          "lat": -33.676844,
+          "lng": -65.458077
+        },
+        {
+          "nombre": "Remedios Escalada y Bélgica",
+          "lat": -33.677359,
+          "lng": -65.456013
+        },
+        {
+          "nombre": "Remedios Escalada y Bolivia",
+          "lat": -33.677758,
+          "lng": -65.453812
+        },
+        {
+          "nombre": "Europa y Maipú",
+          "lat": -33.677229,
+          "lng": -65.452344
+        },
+        {
+          "nombre": "Maipú e Italia",
+          "lat": -33.676155,
+          "lng": -65.456652
+        },
+        {
+          "nombre": "Maipú y 9 de Julio",
+          "lat": -33.6757,
+          "lng": -65.45867
+        },
+        {
+          "nombre": "San Martín y Maipú",
+          "lat": -33.675557,
+          "lng": -65.459944
+        },
+        {
+          "nombre": "San Martín y Sarmiento",
+          "lat": -33.677369,
+          "lng": -65.460497
+        },
+        {
+          "nombre": "San Martín y Necochea",
+          "lat": -33.679137,
+          "lng": -65.461025
+        },
+        {
+          "nombre": "San Martín y Córdoba",
+          "lat": -33.680939,
+          "lng": -65.461554
+        },
+        {
+          "nombre": "San Martín y Rafael Cortez",
+          "lat": -33.682735,
+          "lng": -65.46208
+        }
+      ]
+    }
+  }
+}

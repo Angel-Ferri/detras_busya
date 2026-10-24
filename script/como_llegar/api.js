@@ -37,6 +37,14 @@ const RESPALDO_LOCAL = {
     lineaoeste: { paradas: 'datos/coordenadas/paradas_secundarias_Linea_Oeste.json', horarios: 'datos/linea_oeste_horarios.json' }
 };
 
+/**
+ * Archivo editable a mano con TODAS las paradas y sus coordenadas.
+ * Es la fuente de verdad para las coordenadas de las paradas: si una parada
+ * aparece acá, se usa esta ubicación (y no la de la API) para comparar con el
+ * GPS del usuario y calcular la caminata hasta la parada.
+ */
+const ARCHIVO_PARADAS_MANUALES = 'datos/paradas_manuales.json';
+
 /** Lugares de referencia que publica la API (escuelas, ICA, etc.). */
 let lugaresDeReferencia = [];
 
@@ -150,37 +158,47 @@ function extraerDiasDeServicio(archivo) {
  */
 async function cargarRecorridos() {
     try {
-        const listado = await pedirJSON('/api/lineas');
-        const lineas = Array.isArray(listado.lineas) ? listado.lineas : [];
-        if (!lineas.length) throw new Error('La API no devolvió ninguna línea');
-
-        for (const info of lineas) {
-            const detalle = await pedirJSON('/api/lineas/' + info.id);
-            const key = claveDesdeNombre(detalle.nombre);
+        // Leemos directamente tu JSON unificado
+        const archivo = await pedirJSONLocal('datos/coordenadas/lineas_unificadas.json');
+        const lineas = archivo.lineas || {};
+        
+        for (const key of Object.keys(lineas)) {
+            const info = lineas[key];
             datosLineasCargados[key] = {
-                nombre: detalle.nombre,
+                nombre: info.nombre,
                 key: key,
-                color: detalle.color || '#2563eb',
-                paradas: (detalle.paradas_secundarias || []).map(p => ({
+                color: '#2563eb', // Podés asignar colores fijos según la línea
+                paradas: info.paradas.map(p => ({
                     nombre: p.nombre,
                     lat: p.lat,
-                    lng: p.lng,
+                    lng: p.lng !== undefined ? p.lng : p.lon, // Tolerancia por si quedó algún 'lon'
                     descripcion: p.descripcion || ''
                 })),
-                recorrido: normalizarCoordenadas(
-                    detalle.recorrido && detalle.recorrido.coordenadas
-                        ? detalle.recorrido.coordenadas
-                        : (detalle.paradas_secundarias || []).map(p => [p.lat, p.lng])
-                )
+                recorrido: normalizarCoordenadas(info.recorrido)
             };
         }
-        origenDeDatos = 'api';
-        return true;
-    } catch (e) {
-        console.warn('La API no respondió, se usan los datos locales:', e.message);
         origenDeDatos = 'local';
-        return cargarRecorridosLocales();
+        return Object.keys(datosLineasCargados).length > 0;
+    } catch (e) {
+        console.error('Error cargando lineas_unificadas.json:', e);
+        return false;
     }
+}
+
+async function cargarLugaresDeReferencia() {
+    try {
+        const respuesta = await pedirJSON('/api/lugares');
+        lugaresDeReferencia = (respuesta.lugares || []).map(l => ({
+            nombre: l.nombre,
+            descripcion: l.descripcion || l.nombre,
+            lat: l.coordenadas.lat,
+            lng: l.coordenadas.lng
+        }));
+    } catch (e) {
+        console.warn('No se pudieron cargar los lugares de la API:', e.message);
+        lugaresDeReferencia = [];
+    }
+    // Comercios eliminados
 }
 
 /**
@@ -206,7 +224,64 @@ async function cargarRecorridosLocales() {
             console.warn('No se pudo cargar ' + RESPALDO_LOCAL[key].paradas + ': ' + e.message);
         }
     }
+    await aplicarParadasManuales();
     return Object.keys(datosLineasCargados).length > 0;
+}
+
+/**
+ * Reemplaza las paradas cargadas por las del archivo manual.
+ *
+ * El archivo tiene esta forma:
+ *
+ *   {
+ *     "lineas": {
+ *       "lineaa": { "nombre": "Linea A", "paradas": [ { "nombre": "...", "lat": -33.6, "lng": -65.4 } ] }
+ *     }
+ *   }
+ *
+ * El orden de la lista es el orden del recorrido. Las coordenadas del archivo
+ * ganan siempre, así la app compara el GPS del usuario contra la ubicación real
+ * de la parada y no contra una coordenada vieja o aproximada.
+ */
+async function aplicarParadasManuales() {
+    try {
+        const archivo = await pedirJSONLocal(ARCHIVO_PARADAS_MANUALES);
+        const lineas = archivo && archivo.lineas ? archivo.lineas : null;
+        if (!lineas) return false;
+
+        let aplicadas = 0;
+        for (const key of Object.keys(lineas)) {
+            const destino = datosLineasCargados[key];
+            const manual = lineas[key];
+            if (!destino || !manual || !Array.isArray(manual.paradas)) continue;
+
+            const paradas = manual.paradas
+                .map(p => ({
+                    nombre: String(p.nombre || '').trim(),
+                    lat: Number(p.lat),
+                    lng: Number(p.lng !== undefined ? p.lng : p.lon),
+                    descripcion: p.descripcion || ''
+                }))
+                .filter(p => p.nombre && Number.isFinite(p.lat) && Number.isFinite(p.lng));
+
+            if (!paradas.length) continue;
+
+            // Conservamos la descripción original cuando la parada ya existía.
+            const porNombre = new Map(destino.paradas.map(p => [normalizarNombreParada(p.nombre), p]));
+            destino.paradas = paradas.map(p => {
+                const original = porNombre.get(normalizarNombreParada(p.nombre));
+                return { ...p, descripcion: p.descripcion || (original ? original.descripcion : '') };
+            });
+
+            aplicadas += paradas.length;
+        }
+
+        if (aplicadas > 0) console.log('✅ Paradas manuales aplicadas: ' + aplicadas);
+        return aplicadas > 0;
+    } catch (e) {
+        console.warn('No se pudo leer ' + ARCHIVO_PARADAS_MANUALES + ' (se usan las coordenadas de la API): ' + e.message);
+        return false;
+    }
 }
 
 /**
