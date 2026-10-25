@@ -325,8 +325,12 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
             linea.paradas.forEach((p, idx) => {
                 const distCamina = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [p.lat, p.lng]);
                 if (distCamina <= radioOrigenKm) {
-                    // Ya no usamos proyecciones, confiamos en el índice real del array
-                    origenesValidos.push({ lineaKey: keyLinea, parada: p, idxOriginal: idx, distCamina: distCamina });
+                    // Proyectamos el origen sobre el recorrido real para saber su posición exacta en la ruta
+                    const proyOrigen = obtenerProyeccionEnRecorrido(linea.recorrido, [p.lat, p.lng]);
+                    origenesValidos.push({ 
+                        lineaKey: keyLinea, parada: p, idxOriginal: idx, 
+                        proySeg: proyOrigen.indiceSegmento, distCamina: distCamina 
+                    });
                 }
             });
         }
@@ -351,15 +355,17 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         }
     }
 
-    // 2. Evaluar Viajes Directos
+    // 2. Evaluar Viajes Directos usando la posición real en el recorrido
     for (const origen of origenesValidos) {
         const linea = datosLineasCargados[origen.lineaKey];
         
         linea.paradas.forEach((pDestino, idxDest) => {
-            // El destino debe estar después en la lista del JSON para garantizar el sentido
-            if (idxDest > origen.idxOriginal) {
+            const proyDest = obtenerProyeccionEnRecorrido(linea.recorrido, [pDestino.lat, pDestino.lng]);
+            
+            // Verificamos que el segmento del destino esté estrictamente más adelante en la ruta
+            if (proyDest.indiceSegmento > origen.proySeg) {
                 const distCaminaFinal = calcularDistancia([latDestino, lngDestino], [pDestino.lat, pDestino.lng]);
-                const paradasRecorridas = idxDest - origen.idxOriginal;
+                const paradasRecorridas = Math.abs(idxDest - origen.idxOriginal);
                 
                 const tiempoEstimado = (origen.distCamina * minPorKmCaminando) + (paradasRecorridas * minPorParadaColectivo) + (distCaminaFinal * minPorKmCaminando);
 
@@ -377,7 +383,7 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         });
     }
 
-    // 3. Evaluar Transbordos Dinámicos
+    // 3. Evaluar Transbordos Dinámicos usando el recorrido real
     for (const origenL1 of origenesValidos) {
         const L1 = datosLineasCargados[origenL1.lineaKey];
         
@@ -386,20 +392,24 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
             const L2 = datosLineasCargados[keyL2];
 
             L1.paradas.forEach((pBajadaL1, idxBajadaL1) => {
-                // El punto de escala debe estar adelante del origen
-                if (idxBajadaL1 > origenL1.idxOriginal) {
+                const proyBajada = obtenerProyeccionEnRecorrido(L1.recorrido, [pBajadaL1.lat, pBajadaL1.lng]);
+                
+                if (proyBajada.indiceSegmento > origenL1.proySeg) {
                     
                     L2.paradas.forEach((pSubidaL2, idxSubidaL2) => {
                         const distEscalaCamina = calcularDistancia([pBajadaL1.lat, pBajadaL1.lng], [pSubidaL2.lat, pSubidaL2.lng]);
                         
                         if (distEscalaCamina <= 0.4) {
+                            const proySubidaL2 = obtenerProyeccionEnRecorrido(L2.recorrido, [pSubidaL2.lat, pSubidaL2.lng]);
+                            
                             L2.paradas.forEach((pDest2, idxDest2) => {
-                                // El destino final debe estar adelante de la subida del segundo colectivo
-                                if (idxDest2 > idxSubidaL2) {
+                                const proyDest2 = obtenerProyeccionEnRecorrido(L2.recorrido, [pDest2.lat, pDest2.lng]);
+                                
+                                if (proyDest2.indiceSegmento > proySubidaL2.indiceSegmento) {
                                     const distCaminaFinal = calcularDistancia([latDestino, lngDestino], [pDest2.lat, pDest2.lng]);
                                     
-                                    const paradasL1 = idxBajadaL1 - origenL1.idxOriginal;
-                                    const paradasL2 = idxDest2 - idxSubidaL2;
+                                    const paradasL1 = Math.abs(idxBajadaL1 - origenL1.idxOriginal);
+                                    const paradasL2 = Math.abs(idxDest2 - idxSubidaL2);
                                     
                                     const tiempoEstimado = 
                                         (origenL1.distCamina * minPorKmCaminando) + 

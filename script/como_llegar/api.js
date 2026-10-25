@@ -376,11 +376,11 @@ async function cargarLugaresDeReferencia() {
  * Avisa en pantalla si los datos|no vienen de la API.
  * La idea es no hacer pasar un dato viejo por dato fresco.
  */
-function mostrarAvisoDeOrigen() {
-    if (origenDeDatos !== 'local') return;
-    const aviso = document.createElement('div');
-    aviso.id = 'aviso-origen-datos';
-    aviso.style.cssText = 'position:fixed;bottom:12px;left:12px;z-index:12000;background:#fff7ed;color:#9a3412;border:1px solid #fdba74;border-radius:8px;padding:8px 12px;font-size:.78rem;max-width:280px;box-shadow:0 2px 8px rgba(0,0,0,.15);';
-    aviso.textContent = '⚠️ La API no está disponible: se muestran los datos locales guardados.';
-    document.body.appendChild(aviso);
-}
+// function mostrarAvisoDeOrigen() {
+//     if (origenDeDatos !== 'local') return;
+//     const aviso = document.createElement('div');
+//     aviso.id = 'aviso-origen-datos';
+//     aviso.style.cssText = 'position:fixed;bottom:12px;left:12px;z-index:12000;background:#fff7ed;color:#9a3412;border:1px solid #fdba74;border-radius:8px;padding:8px 12px;font-size:.78rem;max-width:280px;box-shadow:0 2px 8px rgba(0,0,0,.15);';
+//     aviso.textContent = '⚠️ La API no está disponible: se muestran los datos locales guardados.';
+//     document.body.appendChild(aviso);
+// }
