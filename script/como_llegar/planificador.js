@@ -315,7 +315,7 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
     const minPorKmCaminando = 12; 
     const minPorParadaColectivo = 1.5; 
 
-    // 1. PRE-CÁLCULO DE ORÍGENES Y DESTINOS
+    // 1. PRE-CÁLCULO DE ORÍGENES Y DESTINOS (Esto elimina el 99% del esfuerzo matemático)
     const origenesPorLinea = {};
     const destinosPorLinea = {};
 
@@ -328,14 +328,22 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
             const distOrigen = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [p.lat, p.lng]);
             const distDestino = calcularDistancia([latDestino, lngDestino], [p.lat, p.lng]);
 
-            if (distOrigen <= 1.5) origenesPorLinea[keyLinea].push({ parada: p, idxOriginal: idx, distCamina: distOrigen });
-            if (distDestino <= 1.0) destinosPorLinea[keyLinea].push({ parada: p, idxDest: idx, distFinal: distDestino });
+            // Guardamos orígenes a menos de 1.5km
+            if (distOrigen <= 1.5) {
+                origenesPorLinea[keyLinea].push({ parada: p, idxOriginal: idx, distCamina: distOrigen });
+            }
+            // Guardamos destinos a menos de 1km
+            if (distDestino <= 1.0) {
+                destinosPorLinea[keyLinea].push({ parada: p, idxDest: idx, distFinal: distDestino });
+            }
         });
 
+        // Ordenamos de menor a mayor distancia para evaluar siempre las mejores paradas primero
         origenesPorLinea[keyLinea].sort((a, b) => a.distCamina - b.distCamina);
         destinosPorLinea[keyLinea].sort((a, b) => a.distFinal - b.distFinal);
     }
 
+    // Comprobamos si hay algún colectivo cerca
     let hayOrigenValido = false;
     for (const key in origenesPorLinea) {
         if (origenesPorLinea[key].length > 0) hayOrigenValido = true;
@@ -352,6 +360,7 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
             opcionesMap.set(clave, viaje);
         } else {
             const existente = opcionesMap.get(clave);
+            // Sobreescribe si te deja más cerca, o si te deja igual de cerca pero es más rápido
             if (viaje.metrosDestino < existente.metrosDestino || (viaje.metrosDestino === existente.metrosDestino && tiempo < existente.tiempoEstimado)) {
                 viaje.tiempoEstimado = Math.round(tiempo);
                 opcionesMap.set(clave, viaje);
@@ -359,7 +368,7 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         }
     }
 
-    // 2. EVALUAR VIAJES DIRECTOS
+    // 2. EVALUAR VIAJES DIRECTOS (Instantáneo porque solo cruza listas ya filtradas)
     for (const keyLinea in datosLineasCargados) {
         const origenes = origenesPorLinea[keyLinea];
         const destinos = destinosPorLinea[keyLinea];
@@ -369,6 +378,7 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
             
             for (const origen of origenes) {
                 for (const destino of destinos) {
+                    // Condición estricta: El destino debe estar después del origen en el array (índice mayor)
                     if (destino.idxDest > origen.idxOriginal) {
                         const paradasRecorridas = destino.idxDest - origen.idxOriginal;
                         const tiempoEstimado = (origen.distCamina * minPorKmCaminando) + (paradasRecorridas * minPorParadaColectivo) + (destino.distFinal * minPorKmCaminando);
@@ -389,16 +399,14 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         }
     }
 
-    // 3. EVALUAR TRANSBORDOS DINÁMICOS CON FILTRO RÁPIDO
-    // 0.0045 grados equivalen aprox a 500 metros. Evita la matemática pesada si las calles están lejos.
-    const toleranciaGrados = 0.0045; 
-
+    // 3. EVALUAR TRANSBORDOS DINÁMICOS
     for (const keyL1 in origenesPorLinea) {
         const origenesL1 = origenesPorLinea[keyL1];
         if (origenesL1.length === 0) continue;
         
         const L1 = datosLineasCargados[keyL1];
-        const mejorOrigenL1 = origenesL1[0]; // Tomamos el mejor origen
+        // Solo tomamos tu mejor origen en la primera línea para no procesar cálculos basura
+        const mejorOrigenL1 = origenesL1[0];
 
         for (const keyL2 in destinosPorLinea) {
             if (keyL1 === keyL2) continue;
@@ -408,19 +416,17 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
             const L2 = datosLineasCargados[keyL2];
 
             L1.paradas.forEach((pBajadaL1, idxBajadaL1) => {
+                // Sentido de viaje L1: bajada después del origen
                 if (idxBajadaL1 > mejorOrigenL1.idxOriginal) {
                     
                     L2.paradas.forEach((pSubidaL2, idxSubidaL2) => {
-                        // 🔥 FILTRO RÁPIDO: Salta el 99% de las paradas con una resta instantánea
-                        if (Math.abs(pBajadaL1.lat - pSubidaL2.lat) > toleranciaGrados || 
-                            Math.abs(pBajadaL1.lng - pSubidaL2.lng) > toleranciaGrados) {
-                            return; 
-                        }
-
-                        // Solo hace trigonometría (Haversine) si el filtro rápido aprueba
                         const distEscalaCamina = calcularDistancia([pBajadaL1.lat, pBajadaL1.lng], [pSubidaL2.lat, pSubidaL2.lng]);
                         
+                        // Si la escala es caminable
                         if (distEscalaCamina <= 0.4) {
+                            
+                            // Buscamos directamente el mejor destino en nuestra lista pre-filtrada
+                            // Sentido de viaje L2: destino después de la subida
                             const mejorDestinoL2 = destinosL2.find(d => d.idxDest > idxSubidaL2);
                             
                             if (mejorDestinoL2) {
