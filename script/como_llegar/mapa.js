@@ -142,6 +142,7 @@ function calcularRutaYTiempo() {
         '<div class="paso-itinerario"><p>3. Destino: Bajate en <b>' + destinoParada.nombre + '.</b></p></div>' +
         '<p>Tiempo total estimado: ~' + tiempoTotal + ' min.</p>';
 }
+
 /**
  * Traza la ruta a pie con el servidor público de OSRM (perfil peatonal).
  */
@@ -154,15 +155,14 @@ function trazarRutaAPie(desde, hasta) {
             L.latLng(hasta[0], hasta[1])
         ],
         router: L.Routing.osrmv1({
-            // Usamos un servidor OSRM público dedicado exclusivamente a peatones
-            serviceUrl: 'https://routing.openstreetmap.de/routed-foot/route/v1',
+            serviceUrl: 'https://router.project-osrm.org/route/v1',
             profile: 'foot'
         }),
         show: false,
         addWaypoints: false,
         draggableWaypoints: false,
         fitSelectedRoutes: false,
-        createMarker: function () { return null; }, // Evita que dibuje pines extra
+        createMarker: function () { return null; },
         lineOptions: {
             styles: [{ color: '#8b5cf6', weight: 6, dashArray: '8, 8', opacity: 0.9 }]
         }
