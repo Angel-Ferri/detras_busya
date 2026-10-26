@@ -315,29 +315,41 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
     const minPorKmCaminando = 12; 
     const minPorParadaColectivo = 1.5; 
 
-    // 1. Buscar paradas de origen cercanas
-    let radioOrigenKm = 0.5;
-    let origenesValidos = [];
-    
-    while (origenesValidos.length === 0 && radioOrigenKm <= 3.0) {
-        for (const keyLinea in datosLineasCargados) {
-            const linea = datosLineasCargados[keyLinea];
-            linea.paradas.forEach((p, idx) => {
-                const distCamina = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [p.lat, p.lng]);
-                if (distCamina <= radioOrigenKm) {
-                    // Proyectamos el origen sobre el recorrido real para saber su posición exacta en la ruta
-                    const proyOrigen = obtenerProyeccionEnRecorrido(linea.recorrido, [p.lat, p.lng]);
-                    origenesValidos.push({ 
-                        lineaKey: keyLinea, parada: p, idxOriginal: idx, 
-                        proySeg: proyOrigen.indiceSegmento, distCamina: distCamina 
-                    });
-                }
-            });
-        }
-        if (origenesValidos.length === 0) radioOrigenKm += 0.5;
+    // 1. PRE-CÁLCULO DE ORÍGENES Y DESTINOS (Esto elimina el 99% del esfuerzo matemático)
+    const origenesPorLinea = {};
+    const destinosPorLinea = {};
+
+    for (const keyLinea in datosLineasCargados) {
+        const linea = datosLineasCargados[keyLinea];
+        origenesPorLinea[keyLinea] = [];
+        destinosPorLinea[keyLinea] = [];
+
+        linea.paradas.forEach((p, idx) => {
+            const distOrigen = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [p.lat, p.lng]);
+            const distDestino = calcularDistancia([latDestino, lngDestino], [p.lat, p.lng]);
+
+            // Guardamos orígenes a menos de 1.5km
+            if (distOrigen <= 1.5) {
+                origenesPorLinea[keyLinea].push({ parada: p, idxOriginal: idx, distCamina: distOrigen });
+            }
+            // Guardamos destinos a menos de 1km
+            if (distDestino <= 1.0) {
+                destinosPorLinea[keyLinea].push({ parada: p, idxDest: idx, distFinal: distDestino });
+            }
+        });
+
+        // Ordenamos de menor a mayor distancia para evaluar siempre las mejores paradas primero
+        origenesPorLinea[keyLinea].sort((a, b) => a.distCamina - b.distCamina);
+        destinosPorLinea[keyLinea].sort((a, b) => a.distFinal - b.distFinal);
     }
 
-    if (origenesValidos.length === 0) {
+    // Comprobamos si hay algún colectivo cerca
+    let hayOrigenValido = false;
+    for (const key in origenesPorLinea) {
+        if (origenesPorLinea[key].length > 0) hayOrigenValido = true;
+    }
+
+    if (!hayOrigenValido) {
         alert('No hay líneas operando cerca de tu ubicación actual.');
         return;
     }
@@ -348,6 +360,7 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
             opcionesMap.set(clave, viaje);
         } else {
             const existente = opcionesMap.get(clave);
+            // Sobreescribe si te deja más cerca, o si te deja igual de cerca pero es más rápido
             if (viaje.metrosDestino < existente.metrosDestino || (viaje.metrosDestino === existente.metrosDestino && tiempo < existente.tiempoEstimado)) {
                 viaje.tiempoEstimado = Math.round(tiempo);
                 opcionesMap.set(clave, viaje);
@@ -355,80 +368,88 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         }
     }
 
-    // 2. Evaluar Viajes Directos usando la posición real en el recorrido
-    for (const origen of origenesValidos) {
-        const linea = datosLineasCargados[origen.lineaKey];
-        
-        linea.paradas.forEach((pDestino, idxDest) => {
-            const proyDest = obtenerProyeccionEnRecorrido(linea.recorrido, [pDestino.lat, pDestino.lng]);
-            
-            // Verificamos que el segmento del destino esté estrictamente más adelante en la ruta
-            if (proyDest.indiceSegmento > origen.proySeg) {
-                const distCaminaFinal = calcularDistancia([latDestino, lngDestino], [pDestino.lat, pDestino.lng]);
-                const paradasRecorridas = Math.abs(idxDest - origen.idxOriginal);
-                
-                const tiempoEstimado = (origen.distCamina * minPorKmCaminando) + (paradasRecorridas * minPorParadaColectivo) + (distCaminaFinal * minPorKmCaminando);
+    // 2. EVALUAR VIAJES DIRECTOS (Instantáneo porque solo cruza listas ya filtradas)
+    for (const keyLinea in datosLineasCargados) {
+        const origenes = origenesPorLinea[keyLinea];
+        const destinos = destinosPorLinea[keyLinea];
 
-                const viajeDirecto = {
-                    tipo: 'directo',
-                    lineaKey: origen.lineaKey,
-                    nombreLinea: linea.nombre,
-                    origen: { parada: origen.parada, idx: origen.idxOriginal, dist: origen.distCamina },
-                    destino: { parada: pDestino, idx: idxDest, dist: distCaminaFinal },
-                    metrosDestino: Math.round(distCaminaFinal * 1000)
-                };
-                
-                registrarOpcion('directo-' + origen.lineaKey, viajeDirecto, tiempoEstimado);
+        if (origenes.length > 0 && destinos.length > 0) {
+            const linea = datosLineasCargados[keyLinea];
+            
+            for (const origen of origenes) {
+                for (const destino of destinos) {
+                    // Condición estricta: El destino debe estar después del origen en el array (índice mayor)
+                    if (destino.idxDest > origen.idxOriginal) {
+                        const paradasRecorridas = destino.idxDest - origen.idxOriginal;
+                        const tiempoEstimado = (origen.distCamina * minPorKmCaminando) + (paradasRecorridas * minPorParadaColectivo) + (destino.distFinal * minPorKmCaminando);
+
+                        const viajeDirecto = {
+                            tipo: 'directo',
+                            lineaKey: keyLinea,
+                            nombreLinea: linea.nombre,
+                            origen: { parada: origen.parada, idx: origen.idxOriginal, dist: origen.distCamina },
+                            destino: { parada: destino.parada, idx: destino.idxDest, dist: destino.distFinal },
+                            metrosDestino: Math.round(destino.distFinal * 1000)
+                        };
+                        
+                        registrarOpcion('directo-' + keyLinea, viajeDirecto, tiempoEstimado);
+                    }
+                }
             }
-        });
+        }
     }
 
-    // 3. Evaluar Transbordos Dinámicos usando el recorrido real
-    for (const origenL1 of origenesValidos) {
-        const L1 = datosLineasCargados[origenL1.lineaKey];
+    // 3. EVALUAR TRANSBORDOS DINÁMICOS
+    for (const keyL1 in origenesPorLinea) {
+        const origenesL1 = origenesPorLinea[keyL1];
+        if (origenesL1.length === 0) continue;
         
-        for (const keyL2 in datosLineasCargados) {
-            if (origenL1.lineaKey === keyL2) continue;
+        const L1 = datosLineasCargados[keyL1];
+        // Solo tomamos tu mejor origen en la primera línea para no procesar cálculos basura
+        const mejorOrigenL1 = origenesL1[0];
+
+        for (const keyL2 in destinosPorLinea) {
+            if (keyL1 === keyL2) continue;
+            const destinosL2 = destinosPorLinea[keyL2];
+            if (destinosL2.length === 0) continue;
+
             const L2 = datosLineasCargados[keyL2];
 
             L1.paradas.forEach((pBajadaL1, idxBajadaL1) => {
-                const proyBajada = obtenerProyeccionEnRecorrido(L1.recorrido, [pBajadaL1.lat, pBajadaL1.lng]);
-                
-                if (proyBajada.indiceSegmento > origenL1.proySeg) {
+                // Sentido de viaje L1: bajada después del origen
+                if (idxBajadaL1 > mejorOrigenL1.idxOriginal) {
                     
                     L2.paradas.forEach((pSubidaL2, idxSubidaL2) => {
                         const distEscalaCamina = calcularDistancia([pBajadaL1.lat, pBajadaL1.lng], [pSubidaL2.lat, pSubidaL2.lng]);
                         
+                        // Si la escala es caminable
                         if (distEscalaCamina <= 0.4) {
-                            const proySubidaL2 = obtenerProyeccionEnRecorrido(L2.recorrido, [pSubidaL2.lat, pSubidaL2.lng]);
                             
-                            L2.paradas.forEach((pDest2, idxDest2) => {
-                                const proyDest2 = obtenerProyeccionEnRecorrido(L2.recorrido, [pDest2.lat, pDest2.lng]);
+                            // Buscamos directamente el mejor destino en nuestra lista pre-filtrada
+                            // Sentido de viaje L2: destino después de la subida
+                            const mejorDestinoL2 = destinosL2.find(d => d.idxDest > idxSubidaL2);
+                            
+                            if (mejorDestinoL2) {
+                                const paradasL1 = idxBajadaL1 - mejorOrigenL1.idxOriginal;
+                                const paradasL2 = mejorDestinoL2.idxDest - idxSubidaL2;
                                 
-                                if (proyDest2.indiceSegmento > proySubidaL2.indiceSegmento) {
-                                    const distCaminaFinal = calcularDistancia([latDestino, lngDestino], [pDest2.lat, pDest2.lng]);
-                                    
-                                    const paradasL1 = Math.abs(idxBajadaL1 - origenL1.idxOriginal);
-                                    const paradasL2 = Math.abs(idxDest2 - idxSubidaL2);
-                                    
-                                    const tiempoEstimado = 
-                                        (origenL1.distCamina * minPorKmCaminando) + 
-                                        (paradasL1 * minPorParadaColectivo) + 
-                                        (distEscalaCamina * minPorKmCaminando) + 
-                                        (paradasL2 * minPorParadaColectivo) + 
-                                        (distCaminaFinal * minPorKmCaminando);
+                                const tiempoEstimado = 
+                                    (mejorOrigenL1.distCamina * minPorKmCaminando) + 
+                                    (paradasL1 * minPorParadaColectivo) + 
+                                    (distEscalaCamina * minPorKmCaminando) + 
+                                    (paradasL2 * minPorParadaColectivo) + 
+                                    (mejorDestinoL2.distFinal * minPorKmCaminando);
 
-                                    const viajeTransbordo = {
-                                        tipo: 'transbordo',
-                                        L1: { key: origenL1.lineaKey, nombre: L1.nombre, origen: { parada: origenL1.parada, idx: origenL1.idxOriginal }, bajada: { parada: pBajadaL1, idx: idxBajadaL1 } },
-                                        L2: { key: keyL2, nombre: L2.nombre, subida: { parada: pSubidaL2, idx: idxSubidaL2 }, destino: { parada: pDest2, idx: idxDest2 } },
-                                        metrosDestino: Math.round(distCaminaFinal * 1000),
-                                        distEscala: Math.round(distEscalaCamina * 1000)
-                                    };
-                                    
-                                    registrarOpcion('transbordo-' + origenL1.lineaKey + '-' + keyL2, viajeTransbordo, tiempoEstimado);
-                                }
-                            });
+                                const viajeTransbordo = {
+                                    tipo: 'transbordo',
+                                    L1: { key: keyL1, nombre: L1.nombre, origen: { parada: mejorOrigenL1.parada, idx: mejorOrigenL1.idxOriginal }, bajada: { parada: pBajadaL1, idx: idxBajadaL1 } },
+                                    L2: { key: keyL2, nombre: L2.nombre, subida: { parada: pSubidaL2, idx: idxSubidaL2 }, destino: { parada: mejorDestinoL2.parada, idx: mejorDestinoL2.idxDest } },
+                                    metrosDestino: Math.round(mejorDestinoL2.distFinal * 1000),
+                                    distEscala: Math.round(distEscalaCamina * 1000)
+                                };
+                                
+                                registrarOpcion('transbordo-' + keyL1 + '-' + keyL2, viajeTransbordo, tiempoEstimado);
+                            }
                         }
                     });
                 }
