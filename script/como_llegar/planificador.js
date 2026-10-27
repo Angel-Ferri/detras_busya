@@ -297,6 +297,8 @@ document.addEventListener('click', function (e) {
  */
 
 /** Muestra un cartel de carga con colectivo dando vueltas y consejos */
+
+/** Muestra un cartel de carga con colectivo avanzando por paradas y consejos */
 function mostrarCargandoViaje(texto = 'Buscando el mejor viaje...') {
     cerrarCargandoViaje();
 
@@ -307,62 +309,82 @@ function mostrarCargandoViaje(texto = 'Buscando el mejor viaje...') {
     const box = document.createElement('div');
     box.style.cssText = 'background: white; width: 90%; max-width: 330px; padding: 30px 25px; border-radius: 18px; text-align: center; box-shadow: 0 18px 45px rgba(0,0,0,0.35); display: flex; flex-direction: column; align-items: center; gap: 14px;';
 
-    if (!document.getElementById('estilos-carga-colectivo-viejo')) {
+    // 🔥 NUEVOS ESTILOS: Animación lineal de izquierda a derecha
+    if (!document.getElementById('estilos-carga-colectivo-lineal')) {
         const style = document.createElement('style');
-        style.id = 'estilos-carga-colectivo-viejo';
+        style.id = 'estilos-carga-colectivo-lineal';
         style.textContent = `
-            @keyframes girar-colectivo-viejo {
-                0% { transform: rotate(0deg) translateX(40px) rotate(0deg); }
-                100% { transform: rotate(360deg) translateX(40px) rotate(-360deg); }
+            @keyframes mover-colectivo {
+                0% { transform: translateX(-65px); opacity: 0; }
+                15% { opacity: 1; transform: translateX(-40px); }
+                50% { transform: translateX(0px); }
+                85% { opacity: 1; transform: translateX(40px); }
+                100% { transform: translateX(65px); opacity: 0; }
             }
-            @keyframes pulsar-consejo-viejo {
+            @keyframes pulsar-consejo-nuevo {
                 0%, 100% { opacity: 0.7; }
                 50% { opacity: 1; }
             }
-            @keyframes brillar-ruta {
-                0%, 100% { opacity: 0.4; }
-                50% { opacity: 0.9; }
+            .punto-parada {
+                position: absolute;
+                top: 50%;
+                width: 12px;
+                height: 12px;
+                background: #cbd5e1;
+                border: 2px solid white;
+                border-radius: 50%;
+                transform: translateY(-50%);
+                box-shadow: 0 0 0 2px #cbd5e1;
+                z-index: 1;
             }
         `;
         document.head.appendChild(style);
     }
 
     const consejos = [
-        "🚌 El colectivo ya está dando la vuelta por tu zona...",
+        "🚌 Evaluando todas las rutas posibles...",
         "💡 Buscando el que te deje más cerca de tu destino",
         "🚏 Revisando paradas de subida y bajada",
         "⏱️ Calculando caminata + colectivo al milímetro",
-        "🔍 Analizando todas las líneas para ahorrarte pasos",
-        "📍 Buscando la opción más práctica para llegar",
-        "🛣️ Trazando el recorrido ideal para este viaje"
+        "🔍 Analizando combinaciones para ahorrarte pasos",
+        "📍 Trazando la opción más rápida"
     ];
 
+    // 🔥 NUEVA ESTRUCTURA HTML: Calle, 3 paradas y el colectivo moviéndose horizontalmente
     box.innerHTML = `
-        <div style="position: relative; width: 95px; height: 95px; margin-bottom: 4px;">
-            <div style="position: absolute; top: 50%; left: 50%; width: 80px; height: 80px; margin: -40px 0 0 -40px; border: 3px dashed #cbd5e1; border-radius: 50%; animation: brillar-ruta 2.2s ease-in-out infinite;"></div>
-            <div style="position: absolute; top: 50%; left: 50%; font-size: 30px; animation: girar-colectivo-viejo 1.9s linear infinite;">🚌</div>
-            <div style="position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; background: #2563eb; border-radius: 50%; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);"></div>
+        <div style="position: relative; width: 150px; height: 60px; margin-bottom: 5px; display: flex; align-items: center; justify-content: center;">
+            <!-- Línea de la calle -->
+            <div style="position: absolute; width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px;"></div>
+            
+            <!-- Paradas -->
+            <div class="punto-parada" style="left: 10%;"></div>
+            <div class="punto-parada" style="left: 50%; background: #2563eb; box-shadow: 0 0 0 2px #bfdbfe; transform: translate(-50%, -50%);"></div>
+            <div class="punto-parada" style="right: 10%;"></div>
+            
+            <!-- Colectivo animado -->
+            <div style="position: absolute; top: 50%; font-size: 32px; margin-top: -22px; animation: mover-colectivo 2.5s ease-in-out infinite; z-index: 2;">🚌</div>
         </div>
+        
         <div style="font-weight: bold; color: #1e293b; font-size: 1rem;">${texto}</div>
-        <div id="consejo-carga-viejo" style="font-size: 0.9rem; color: #475569; min-height: 42px; display: flex; align-items: center; justify-content: center; line-height: 1.4; animation: pulsar-consejo-viejo 2s ease-in-out infinite; padding: 0 6px;"></div>
+        <div id="consejo-carga-nuevo" style="font-size: 0.9rem; color: #475569; min-height: 42px; display: flex; align-items: center; justify-content: center; line-height: 1.4; animation: pulsar-consejo-nuevo 2s ease-in-out infinite; padding: 0 6px;"></div>
         <div style="font-size: 0.75rem; color: #94a3b8; margin-top: -4px;">Un toque más... ya te muestro las opciones</div>
     `;
 
     overlay.appendChild(box);
     document.body.appendChild(overlay);
 
-    const consejoEl = box.querySelector('#consejo-carga-viejo');
+    const consejoEl = box.querySelector('#consejo-carga-nuevo');
     let indexConsejo = 0;
     consejoEl.textContent = consejos[indexConsejo];
 
-    window._intervalConsejosCargaViejo = setInterval(() => {
+    window._intervalConsejosCargaNuevo = setInterval(() => {
         indexConsejo = (indexConsejo + 1) % consejos.length;
         consejoEl.style.opacity = '0';
         setTimeout(() => {
             consejoEl.textContent = consejos[indexConsejo];
             consejoEl.style.opacity = '1';
         }, 250);
-    }, 2000);
+    }, 2200);
 }
 
 /** Cierra el cartel de carga */
@@ -370,13 +392,14 @@ function cerrarCargandoViaje() {
     const modal = document.getElementById('modal-cargando-viaje');
     if (modal) modal.remove();
 
+    if (window._intervalConsejosCargaNuevo) {
+        clearInterval(window._intervalConsejosCargaNuevo);
+        delete window._intervalConsejosCargaNuevo;
+    }
+    // Por si quedó el temporizador viejo corriendo de antes
     if (window._intervalConsejosCargaViejo) {
         clearInterval(window._intervalConsejosCargaViejo);
         delete window._intervalConsejosCargaViejo;
-    }
-    if (window._intervalConsejosCarga) {
-        clearInterval(window._intervalConsejosCarga);
-        delete window._intervalConsejosCarga;
     }
 }
 
@@ -400,29 +423,33 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
     const minPorKmCaminando = 12; 
     const minPorParadaColectivo = 1.5; 
 
-    // 1. Buscar paradas de origen cercanas
-    let radioOrigenKm = 0.5;
-    let origenesValidos = [];
-    
-    while (origenesValidos.length === 0 && radioOrigenKm <= 3.0) {
-        for (const keyLinea in datosLineasCargados) {
-            const linea = datosLineasCargados[keyLinea];
-            linea.paradas.forEach((p, idx) => {
-                const distCamina = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [p.lat, p.lng]);
-                if (distCamina <= radioOrigenKm) {
-                    // Proyectamos el origen sobre el recorrido real para saber su posición exacta en la ruta
-                    const proyOrigen = obtenerProyeccionEnRecorrido(linea.recorrido, [p.lat, p.lng]);
-                    origenesValidos.push({ 
-                        lineaKey: keyLinea, parada: p, idxOriginal: idx, 
-                        proySeg: proyOrigen.indiceSegmento, distCamina: distCamina 
-                    });
-                }
-            });
-        }
-        if (origenesValidos.length === 0) radioOrigenKm += 0.5;
+    // 1. PRE-CÁLCULO DE ORÍGENES Y DESTINOS
+    const origenesPorLinea = {};
+    const destinosPorLinea = {};
+
+    for (const keyLinea in datosLineasCargados) {
+        const linea = datosLineasCargados[keyLinea];
+        origenesPorLinea[keyLinea] = [];
+        destinosPorLinea[keyLinea] = [];
+
+        linea.paradas.forEach((p, idx) => {
+            const distOrigen = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [p.lat, p.lng]);
+            const distDestino = calcularDistancia([latDestino, lngDestino], [p.lat, p.lng]);
+
+            if (distOrigen <= 1.5) origenesPorLinea[keyLinea].push({ parada: p, idxOriginal: idx, distCamina: distOrigen });
+            if (distDestino <= 1.0) destinosPorLinea[keyLinea].push({ parada: p, idxDest: idx, distFinal: distDestino });
+        });
+
+        origenesPorLinea[keyLinea].sort((a, b) => a.distCamina - b.distCamina);
+        destinosPorLinea[keyLinea].sort((a, b) => a.distFinal - b.distFinal);
     }
 
-    if (origenesValidos.length === 0) {
+    let hayOrigenValido = false;
+    for (const key in origenesPorLinea) {
+        if (origenesPorLinea[key].length > 0) hayOrigenValido = true;
+    }
+
+    if (!hayOrigenValido) {
         alert('No hay líneas operando cerca de tu ubicación actual.');
         return;
     }
@@ -440,80 +467,88 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         }
     }
 
-    // 2. Evaluar Viajes Directos usando la posición real en el recorrido
-    for (const origen of origenesValidos) {
-        const linea = datosLineasCargados[origen.lineaKey];
-        
-        linea.paradas.forEach((pDestino, idxDest) => {
-            const proyDest = obtenerProyeccionEnRecorrido(linea.recorrido, [pDestino.lat, pDestino.lng]);
-            
-            // Verificamos que el segmento del destino esté estrictamente más adelante en la ruta
-            if (proyDest.indiceSegmento > origen.proySeg) {
-                const distCaminaFinal = calcularDistancia([latDestino, lngDestino], [pDestino.lat, pDestino.lng]);
-                const paradasRecorridas = Math.abs(idxDest - origen.idxOriginal);
-                
-                const tiempoEstimado = (origen.distCamina * minPorKmCaminando) + (paradasRecorridas * minPorParadaColectivo) + (distCaminaFinal * minPorKmCaminando);
+    // 2. EVALUAR VIAJES DIRECTOS
+    for (const keyLinea in datosLineasCargados) {
+        const origenes = origenesPorLinea[keyLinea];
+        const destinos = destinosPorLinea[keyLinea];
 
-                const viajeDirecto = {
-                    tipo: 'directo',
-                    lineaKey: origen.lineaKey,
-                    nombreLinea: linea.nombre,
-                    origen: { parada: origen.parada, idx: origen.idxOriginal, dist: origen.distCamina },
-                    destino: { parada: pDestino, idx: idxDest, dist: distCaminaFinal },
-                    metrosDestino: Math.round(distCaminaFinal * 1000)
-                };
-                
-                registrarOpcion('directo-' + origen.lineaKey, viajeDirecto, tiempoEstimado);
+        if (origenes.length > 0 && destinos.length > 0) {
+            const linea = datosLineasCargados[keyLinea];
+            
+            for (const origen of origenes) {
+                for (const destino of destinos) {
+                    if (destino.idxDest > origen.idxOriginal) {
+                        const paradasRecorridas = destino.idxDest - origen.idxOriginal;
+                        const tiempoEstimado = (origen.distCamina * minPorKmCaminando) + (paradasRecorridas * minPorParadaColectivo) + (destino.distFinal * minPorKmCaminando);
+
+                        const viajeDirecto = {
+                            tipo: 'directo',
+                            lineaKey: keyLinea,
+                            nombreLinea: linea.nombre,
+                            origen: { parada: origen.parada, idx: origen.idxOriginal, dist: origen.distCamina },
+                            destino: { parada: destino.parada, idx: destino.idxDest, dist: destino.distFinal },
+                            metrosDestino: Math.round(destino.distFinal * 1000)
+                        };
+                        
+                        registrarOpcion('directo-' + keyLinea, viajeDirecto, tiempoEstimado);
+                    }
+                }
             }
-        });
+        }
     }
 
-    // 3. Evaluar Transbordos Dinámicos usando el recorrido real
-    for (const origenL1 of origenesValidos) {
-        const L1 = datosLineasCargados[origenL1.lineaKey];
+    // 3. EVALUAR TRANSBORDOS DINÁMICOS CON FILTRO RÁPIDO
+    const toleranciaGrados = 0.0045; 
+
+    for (const keyL1 in origenesPorLinea) {
+        const origenesL1 = origenesPorLinea[keyL1];
+        if (origenesL1.length === 0) continue;
         
-        for (const keyL2 in datosLineasCargados) {
-            if (origenL1.lineaKey === keyL2) continue;
+        const L1 = datosLineasCargados[keyL1];
+        const mejorOrigenL1 = origenesL1[0]; 
+
+        for (const keyL2 in destinosPorLinea) {
+            if (keyL1 === keyL2) continue;
+            const destinosL2 = destinosPorLinea[keyL2];
+            if (destinosL2.length === 0) continue;
+
             const L2 = datosLineasCargados[keyL2];
 
             L1.paradas.forEach((pBajadaL1, idxBajadaL1) => {
-                const proyBajada = obtenerProyeccionEnRecorrido(L1.recorrido, [pBajadaL1.lat, pBajadaL1.lng]);
-                
-                if (proyBajada.indiceSegmento > origenL1.proySeg) {
+                if (idxBajadaL1 > mejorOrigenL1.idxOriginal) {
                     
                     L2.paradas.forEach((pSubidaL2, idxSubidaL2) => {
+                        if (Math.abs(pBajadaL1.lat - pSubidaL2.lat) > toleranciaGrados || 
+                            Math.abs(pBajadaL1.lng - pSubidaL2.lng) > toleranciaGrados) {
+                            return; 
+                        }
+
                         const distEscalaCamina = calcularDistancia([pBajadaL1.lat, pBajadaL1.lng], [pSubidaL2.lat, pSubidaL2.lng]);
                         
                         if (distEscalaCamina <= 0.4) {
-                            const proySubidaL2 = obtenerProyeccionEnRecorrido(L2.recorrido, [pSubidaL2.lat, pSubidaL2.lng]);
+                            const mejorDestinoL2 = destinosL2.find(d => d.idxDest > idxSubidaL2);
                             
-                            L2.paradas.forEach((pDest2, idxDest2) => {
-                                const proyDest2 = obtenerProyeccionEnRecorrido(L2.recorrido, [pDest2.lat, pDest2.lng]);
+                            if (mejorDestinoL2) {
+                                const paradasL1 = Math.abs(idxBajadaL1 - mejorOrigenL1.idxOriginal);
+                                const paradasL2 = Math.abs(mejorDestinoL2.idxDest - idxSubidaL2);
                                 
-                                if (proyDest2.indiceSegmento > proySubidaL2.indiceSegmento) {
-                                    const distCaminaFinal = calcularDistancia([latDestino, lngDestino], [pDest2.lat, pDest2.lng]);
-                                    
-                                    const paradasL1 = Math.abs(idxBajadaL1 - origenL1.idxOriginal);
-                                    const paradasL2 = Math.abs(idxDest2 - idxSubidaL2);
-                                    
-                                    const tiempoEstimado = 
-                                        (origenL1.distCamina * minPorKmCaminando) + 
-                                        (paradasL1 * minPorParadaColectivo) + 
-                                        (distEscalaCamina * minPorKmCaminando) + 
-                                        (paradasL2 * minPorParadaColectivo) + 
-                                        (distCaminaFinal * minPorKmCaminando);
+                                const tiempoEstimado = 
+                                    (mejorOrigenL1.distCamina * minPorKmCaminando) + 
+                                    (paradasL1 * minPorParadaColectivo) + 
+                                    (distEscalaCamina * minPorKmCaminando) + 
+                                    (paradasL2 * minPorParadaColectivo) + 
+                                    (mejorDestinoL2.distFinal * minPorKmCaminando);
 
-                                    const viajeTransbordo = {
-                                        tipo: 'transbordo',
-                                        L1: { key: origenL1.lineaKey, nombre: L1.nombre, origen: { parada: origenL1.parada, idx: origenL1.idxOriginal }, bajada: { parada: pBajadaL1, idx: idxBajadaL1 } },
-                                        L2: { key: keyL2, nombre: L2.nombre, subida: { parada: pSubidaL2, idx: idxSubidaL2 }, destino: { parada: pDest2, idx: idxDest2 } },
-                                        metrosDestino: Math.round(distCaminaFinal * 1000),
-                                        distEscala: Math.round(distEscalaCamina * 1000)
-                                    };
-                                    
-                                    registrarOpcion('transbordo-' + origenL1.lineaKey + '-' + keyL2, viajeTransbordo, tiempoEstimado);
-                                }
-                            });
+                                const viajeTransbordo = {
+                                    tipo: 'transbordo',
+                                    L1: { key: keyL1, nombre: L1.nombre, origen: { parada: mejorOrigenL1.parada, idx: mejorOrigenL1.idxOriginal }, bajada: { parada: pBajadaL1, idx: idxBajadaL1 } },
+                                    L2: { key: keyL2, nombre: L2.nombre, subida: { parada: pSubidaL2, idx: idxSubidaL2 }, destino: { parada: mejorDestinoL2.parada, idx: mejorDestinoL2.idxDest } },
+                                    metrosDestino: Math.round(mejorDestinoL2.distFinal * 1000),
+                                    distEscala: Math.round(distEscalaCamina * 1000)
+                                };
+                                
+                                registrarOpcion('transbordo-' + keyL1 + '-' + keyL2, viajeTransbordo, tiempoEstimado);
+                            }
                         }
                     });
                 }
@@ -521,9 +556,83 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         }
     }
 
+    // 4. ORDENAMOS Y CORTAMOS A LAS MEJORES 3 OPCIONES
     opcionesViajeActuales = Array.from(opcionesMap.values())
         .sort((a, b) => a.metrosDestino - b.metrosDestino || a.tiempoEstimado - b.tiempoEstimado)
-        .slice(0, 3);
+        .slice(0, 3); 
+
+    // 🔥 5. AGREGAR EL MEJOR VIAJE DIRECTO ABSOLUTO (Sin importar la distancia de caminata inicial)
+    let mejorDirectoAbsoluto = null;
+    let minDistanciaFinal = Infinity;
+
+    for (const keyLinea in datosLineasCargados) {
+        const linea = datosLineasCargados[keyLinea];
+        let mejorDestino = null;
+
+        // Buscamos la parada que deje más cerca del destino final
+        linea.paradas.forEach((p, idx) => {
+            const dist = calcularDistancia([latDestino, lngDestino], [p.lat, p.lng]);
+            if (!mejorDestino || dist < mejorDestino.distFinal) {
+                mejorDestino = { parada: p, idxDest: idx, distFinal: dist };
+            }
+        });
+
+        // Buscamos un origen válido para ese destino que sea el más cercano al usuario
+        if (mejorDestino) {
+            let mejorOrigen = null;
+            linea.paradas.forEach((p, idx) => {
+                if (idx < mejorDestino.idxDest) {
+                    const distOrigen = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [p.lat, p.lng]);
+                    const proyOrigen = obtenerProyeccionEnRecorrido(linea.recorrido, [p.lat, p.lng]);
+                    const proyDest = obtenerProyeccionEnRecorrido(linea.recorrido, [mejorDestino.parada.lat, mejorDestino.parada.lng]);
+                    
+                    if (proyDest.indiceSegmento > proyOrigen.indiceSegmento) {
+                        if (!mejorOrigen || distOrigen < mejorOrigen.distCamina) {
+                            mejorOrigen = { parada: p, idxOriginal: idx, distCamina: distOrigen };
+                        }
+                    }
+                }
+            });
+
+            // Si este directo te deja más cerca que los evaluados previamente, lo guardamos
+            if (mejorOrigen && mejorDestino.distFinal < minDistanciaFinal) {
+                minDistanciaFinal = mejorDestino.distFinal;
+                const paradasRecorridas = Math.abs(mejorDestino.idxDest - mejorOrigen.idxOriginal);
+                const tiempoEstimado = (mejorOrigen.distCamina * minPorKmCaminando) + (paradasRecorridas * minPorParadaColectivo) + (mejorDestino.distFinal * minPorKmCaminando);
+
+                mejorDirectoAbsoluto = {
+                    tipo: 'directo',
+                    lineaKey: keyLinea,
+                    nombreLinea: linea.nombre,
+                    origen: mejorOrigen,
+                    destino: mejorDestino,
+                    metrosDestino: Math.round(mejorDestino.distFinal * 1000),
+                    tiempoEstimado: Math.round(tiempoEstimado)
+                };
+            }
+        }
+    }
+
+// Si encontramos una cuarta opción absoluta, revisamos si no está ya para agregarla
+    if (mejorDirectoAbsoluto) {
+        const yaExiste = opcionesViajeActuales.some(op => 
+            op.tipo === 'directo' && 
+            op.lineaKey === mejorDirectoAbsoluto.lineaKey && 
+            op.origen.idx === mejorDirectoAbsoluto.origen.idxOriginal && 
+            op.destino.idx === mejorDirectoAbsoluto.destino.idxDest
+        );
+        
+        if (!yaExiste) {
+            // 🔥 Si ya tenemos 3 opciones, sacamos la peor (la última) para hacerle lugar
+            if (opcionesViajeActuales.length >= 3) {
+                opcionesViajeActuales.pop(); 
+            }
+            opcionesViajeActuales.push(mejorDirectoAbsoluto);
+            
+            // Volvemos a ordenar para que queden de mejor a peor
+            opcionesViajeActuales.sort((a, b) => a.tiempoEstimado - b.tiempoEstimado || a.metrosDestino - b.metrosDestino);
+        }
+    }
 
     if (opcionesViajeActuales.length === 0) {
         alert('No encontramos opciones viables para acercarte a ese destino.');
@@ -532,44 +641,53 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
 
     mostrarListaDeOpciones();
 }
-/** Genera un cartel flotante (modal) en el centro de la pantalla con solo las 2 mejores opciones */
+
+
+/** Genera un cartel flotante (modal) en el centro de la pantalla con las opciones dinámicas */
 function mostrarListaDeOpciones() {
     limpiarMapa();
     
+    // Mostramos un pin en el destino para que el usuario se ubique de fondo
     marcadorDestinoBuscado = L.marker([infoDestinoActual.lat, infoDestinoActual.lng]).addTo(mapa)
         .bindPopup(`📍 <b>Destino:</b> ${infoDestinoActual.nombre}`).openPopup();
     mapa.setView([infoDestinoActual.lat, infoDestinoActual.lng], 14);
 
+    // Si ya existe un modal anterior, lo borramos por seguridad
     cerrarModalOpciones();
 
+    // 1. Crear el fondo oscuro del modal
     const overlay = document.createElement('div');
     overlay.id = 'modal-opciones-viaje';
     overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); z-index: 99999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px);';
     
+    // 2. Crear la caja central
     const modalContent = document.createElement('div');
-    modalContent.style.cssText = 'background: white; width: 90%; max-width: 380px; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-family: sans-serif;';
+    modalContent.style.cssText = 'background: white; width: 90%; max-width: 380px; max-height: 85vh; overflow-y: auto; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-family: sans-serif;';
     
-    let htmlOpciones = `<h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #1e293b; text-align: center;">🚌 3 mejores opciones para ir a:<br><span style="color: #2563eb;">${infoDestinoActual.nombre}</span></h3>`;
+    // Título dinámico que se adapta si hay 3 o 4 opciones
+    const cantidadOpciones = opcionesViajeActuales.length;
+    let htmlOpciones = `<h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #1e293b; text-align: center;">🚌 ${cantidadOpciones} opciones para ir a:<br><span style="color: #2563eb;">${infoDestinoActual.nombre}</span></h3>`;
     
-    // Generar botones limitados a 3
-    opcionesViajeActuales.slice(0, 3).forEach((opcion, index) => {
+    // 3. Generar los botones recorriendo todo el array (sea de 3 o de 4)
+    opcionesViajeActuales.forEach((opcion, index) => {
         if (opcion.tipo === 'directo') {
             htmlOpciones += `
                 <button onclick="seleccionarOpcionViaje(${index})" style="width: 100%; text-align: left; padding: 12px; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; cursor: pointer;">
                     <div style="font-weight: bold; color: #2563eb; font-size: 1.05rem;">🚌 ${opcion.nombreLinea} (Directo)</div>
-                    <div style="font-size: 0.9rem; color: #475569; margin-top: 6px;">🚶 Te deja a <b>${opcion.metrosDestino}m</b> del lugar</div>
-                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">⏱️ Tiempo aprox: ~${opcion.tiempoEstimado} min</div>
+                    <div style="font-size: 0.9rem; color: #475569; margin-top: 6px;">⏱️ Tiempo total: <b>~${opcion.tiempoEstimado} min</b></div>
+                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">📍 Caminás ${opcion.metrosDestino}m al llegar.</div>
                 </button>`;
         } else {
             htmlOpciones += `
                 <button onclick="seleccionarOpcionViaje(${index})" style="width: 100%; text-align: left; padding: 12px; margin-bottom: 10px; border: 2px solid #fed7aa; border-radius: 8px; background: #fff7ed; cursor: pointer;">
                     <div style="font-weight: bold; color: #ea580c; font-size: 1.05rem;">🔄 ${opcion.L1.nombre} ➔ ${opcion.L2.nombre}</div>
-                    <div style="font-size: 0.9rem; color: #475569; margin-top: 6px;">🚶 Te deja a <b>${opcion.metrosDestino}m</b> del lugar</div>
-                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">⏱️ Tiempo aprox: ~${opcion.tiempoEstimado} min (escala de ${opcion.distEscala}m)</div>
+                    <div style="font-size: 0.9rem; color: #475569; margin-top: 6px;">⏱️ Tiempo total: <b>~${opcion.tiempoEstimado} min</b></div>
+                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">🚶 Caminás ${opcion.distEscala}m en la escala y ${opcion.metrosDestino}m al destino.</div>
                 </button>`;
         }
     });
 
+    // 4. Agregar botón de cancelar
     htmlOpciones += `<button onclick="cerrarModalOpciones()" style="width: 100%; padding: 10px; margin-top: 5px; border: none; background: transparent; color: #64748b; cursor: pointer; font-weight: bold;">Cancelar</button>`;
 
     modalContent.innerHTML = htmlOpciones;
@@ -635,7 +753,6 @@ function cerrarModalOpciones() {
 
 /** Ejecuta los cambios en el mapa y la interfaz según la opción elegida por el usuario */
 function seleccionarOpcionViaje(index) {
-    // 1. Ocultar el cartel flotante apenas el usuario toca una opción
     cerrarModalOpciones();
 
     const viaje = opcionesViajeActuales[index];
@@ -643,7 +760,6 @@ function seleccionarOpcionViaje(index) {
 
     limpiarMapa();
     
-    // Botón para volver a ver las opciones en el panel lateral
     const btnVolver = `<button onclick="mostrarListaDeOpciones()" style="margin-top: 15px; width: 100%; padding: 8px; border: 1px solid #94a3b8; background: #f1f5f9; border-radius: 6px; cursor: pointer; font-weight: bold; color: #334155;">🔄 Cambiar de línea / Ver otras opciones</button>`;
 
     if (viaje.tipo === 'directo') {
@@ -652,17 +768,23 @@ function seleccionarOpcionViaje(index) {
         setTimeout(() => {
             document.getElementById('select-destino').value = viaje.destino.idx;
             sugerenciaTemporal = { idxDestino: viaje.destino.idx, cercana: { parada: viaje.origen.parada, index: viaje.origen.idx, distanciaKm: viaje.origen.dist } };
+            
+            // Dispara el cálculo base y la pantalla de carga (dura 450ms)
             procesarRespuestaSugerencia(true);
             
-            document.getElementById('resumen-viaje').innerHTML = `
-                <div class="paso-itinerario"><p>🚌 Tomá la <b>${viaje.nombreLinea}</b> en <b>${viaje.origen.parada.nombre}</b>.</p></div>
-                <div class="paso-itinerario"><p>📍 Bajate en <b>${viaje.destino.parada.nombre}</b> (a ${viaje.metrosDestino}m de tu destino).</p></div>
-                <div style="font-weight: bold; color: #0f172a; margin-top: 10px;">⏱️ Tiempo total: ~${viaje.tiempoEstimado} min.</div>
-                ${btnVolver}
-            `;
-            marcadorDestinoBuscado = L.marker([infoDestinoActual.lat, infoDestinoActual.lng]).addTo(mapa)
-                .bindPopup(`📍 <b>Destino:</b> ${infoDestinoActual.nombre}<br>Caminás ${viaje.metrosDestino}m al bajar.`).openPopup();
-            mapa.setView([infoDestinoActual.lat, infoDestinoActual.lng], 15);
+            // 🔥 Esperamos 500ms para que inyecte el botón DESPUÉS de que termine de cargar
+            setTimeout(() => {
+                document.getElementById('resumen-viaje').innerHTML = `
+                    <div class="paso-itinerario"><p>🚌 Tomá la <b>${viaje.nombreLinea}</b> en <b>${viaje.origen.parada.nombre}</b>.</p></div>
+                    <div class="paso-itinerario"><p>📍 Bajate en <b>${viaje.destino.parada.nombre}</b> (a ${viaje.metrosDestino}m de tu destino).</p></div>
+                    <div style="font-weight: bold; color: #0f172a; margin-top: 10px;">⏱️ Tiempo total: ~${viaje.tiempoEstimado} min.</div>
+                    ${btnVolver}
+                `;
+                marcadorDestinoBuscado = L.marker([infoDestinoActual.lat, infoDestinoActual.lng]).addTo(mapa)
+                    .bindPopup(`📍 <b>Destino:</b> ${infoDestinoActual.nombre}<br>Caminás ${viaje.metrosDestino}m al bajar.`).openPopup();
+                mapa.setView([infoDestinoActual.lat, infoDestinoActual.lng], 15);
+            }, 500); 
+
         }, 150);
     } else {
         document.getElementById('select-linea').value = viaje.L1.key;
@@ -670,18 +792,23 @@ function seleccionarOpcionViaje(index) {
         setTimeout(() => {
             document.getElementById('select-destino').value = viaje.L1.bajada.idx;
             sugerenciaTemporal = { idxDestino: viaje.L1.bajada.idx, cercana: { parada: viaje.L1.origen.parada, index: viaje.L1.origen.idx, distanciaKm: 0 } };
+            
+            // Dispara el cálculo base y la pantalla de carga (dura 450ms)
             procesarRespuestaSugerencia(true);
 
-            document.getElementById('resumen-viaje').innerHTML = `
-                <div class="paso-itinerario"><p>🚌 <b>Tramo 1:</b> Tomá la <b>${viaje.L1.nombre}</b> en <b>${viaje.L1.origen.parada.nombre}</b> y bajate en <b>${viaje.L1.bajada.parada.nombre}</b>.</p></div>
-                <div class="paso-itinerario" style="background: #fff7ed; padding: 10px; border-left: 4px solid #f97316;">
-                    <p>🔄 <b>Escala:</b> Caminá ${viaje.distEscala}m hacia <b>${viaje.L2.subida.parada.nombre}</b> y tomá la <b>${viaje.L2.nombre}</b>.</p>
-                </div>
-                <div class="paso-itinerario"><p>📍 <b>Tramo 2:</b> Bajate en <b>${viaje.L2.destino.parada.nombre}</b> (a ${viaje.metrosDestino}m de tu destino final).</p></div>
-                <div style="font-weight: bold; color: #0f172a; margin-top: 10px;">⏱️ Tiempo total: ~${viaje.tiempoEstimado} min.</div>
-                ${btnVolver}
-            `;
-            dibujarTramoEscalaL2(viaje, infoDestinoActual.lat, infoDestinoActual.lng, infoDestinoActual.nombre);
+            // 🔥 Esperamos 500ms para que inyecte el botón DESPUÉS de que termine de cargar
+            setTimeout(() => {
+                document.getElementById('resumen-viaje').innerHTML = `
+                    <div class="paso-itinerario"><p>🚌 <b>Tramo 1:</b> Tomá la <b>${viaje.L1.nombre}</b> en <b>${viaje.L1.origen.parada.nombre}</b> y bajate en <b>${viaje.L1.bajada.parada.nombre}</b>.</p></div>
+                    <div class="paso-itinerario" style="background: #fff7ed; padding: 10px; border-left: 4px solid #f97316;">
+                        <p>🔄 <b>Escala:</b> Caminá ${viaje.distEscala}m hacia <b>${viaje.L2.subida.parada.nombre}</b> y tomá la <b>${viaje.L2.nombre}</b>.</p>
+                    </div>
+                    <div class="paso-itinerario"><p>📍 <b>Tramo 2:</b> Bajate en <b>${viaje.L2.destino.parada.nombre}</b> (a ${viaje.metrosDestino}m de tu destino final).</p></div>
+                    <div style="font-weight: bold; color: #0f172a; margin-top: 10px;">⏱️ Tiempo total: ~${viaje.tiempoEstimado} min.</div>
+                    ${btnVolver}
+                `;
+                dibujarTramoEscalaL2(viaje, infoDestinoActual.lat, infoDestinoActual.lng, infoDestinoActual.nombre);
+            }, 500);
         }, 200);
     }
 }
