@@ -102,7 +102,11 @@ function procesarRespuestaSugerencia(confirmar) {
         recorridoActual.origenParada = cercana.parada;
         recorridoActual.distanciaAPieKm = cercana.distanciaKm;
         trazarRutaAPie(ubicacionUsuario, [recorridoActual.origenParada.lat, recorridoActual.origenParada.lng]);
-        calcularRutaYTiempo();
+        mostrarCargandoViaje('Calculando tu ruta...');
+        setTimeout(() => {
+            calcularRutaYTiempo();
+            cerrarCargandoViaje();
+        }, 450);
     }
     sugerenciaTemporal = null;
 }
@@ -125,7 +129,11 @@ function alSeleccionarOrigen() {
         [recorridoActual.origenParada.lat, recorridoActual.origenParada.lng]
     );
     trazarRutaAPie(ubicacionUsuario, [recorridoActual.origenParada.lat, recorridoActual.origenParada.lng]);
-    calcularRutaYTiempo();
+    mostrarCargandoViaje('Calculando tu ruta...');
+    setTimeout(() => {
+        calcularRutaYTiempo();
+        cerrarCargandoViaje();
+    }, 450);
 }
 
 
@@ -182,7 +190,7 @@ async function ejecutarBusqueda() {
 
     contenedorResultados.innerHTML = '';
 
-// --- Resultados: paradas ---
+    // --- Resultados: paradas ---
     if (paradasEncontradas.length > 0) {
         const titulo = document.createElement('li');
         titulo.innerHTML = '<strong style="display:block; padding: 5px 10px; background:#f1f5f9; color:#475569; font-size: 0.8rem;">🚏 PARADAS SUGERIDAS</strong>';
@@ -195,32 +203,15 @@ async function ejecutarBusqueda() {
             li.onmouseout = () => li.style.background = 'white';
             li.innerHTML = `<span><b>${item.parada.nombre}</b></span><small style="color:#2563eb;">Línea sugerida: ${item.nombreLinea}</small>`;
             
-            // 🔥 ESTE ES EL CAMBIO CLAVE:
-            // En vez de cargar la línea a la fuerza, le pasamos las coordenadas al nuevo algoritmo evaluador
-            li.onclick = () => encontrarViajeMasOptimo(item.parada.lat, item.parada.lng, item.parada.nombre);
+            // 🔥 SOLUCIÓN AL CONGELAMIENTO: Muestra el cartel, pausa 150ms para que se dibuje, y luego calcula
+            li.onclick = () => {
+                mostrarCargandoViaje('Calculando la mejor ruta...');
+                setTimeout(() => {
+                    encontrarViajeMasOptimo(item.parada.lat, item.parada.lng, item.parada.nombre);
+                    cerrarCargandoViaje();
+                }, 150);
+            };
             
-            contenedorResultados.appendChild(li);
-        });
-    }
-
-    // --- Resultados: lugares de referencia de la API / comercios ---
-    const referencias = lugaresDeReferencia.filter(l => coincideConErrores(l.nombre, terminoInput) || (l.descripcion && coincideConErrores(l.descripcion, terminoInput)) || (l.direccion && coincideConErrores(l.direccion, terminoInput)));
-    if (referencias.length > 0) {
-        const tituloLugares = document.createElement('li');
-        tituloLugares.innerHTML = '<strong style="display:block; padding: 5px 10px; background:#f1f5f9; color:#475569; font-size: 0.8rem;">🏫 LUGARES DE REFERENCIA Y COMERCIOS</strong>';
-        contenedorResultados.appendChild(tituloLugares);
-
-        referencias.slice(0, 12).forEach(lugar => {
-            const li = document.createElement('li');
-            li.style = 'padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; background: white;';
-            li.onmouseover = () => li.style.background = '#f8fafc';
-            li.onmouseout = () => li.style.background = 'white';
-            const lat = lugar.lat || (lugar.coordenadas ? lugar.coordenadas.lat : null);
-            const lng = lugar.lng || (lugar.coordenadas ? lugar.coordenadas.lng : null);
-            li.innerHTML = `<b>${lugar.nombre}</b> <br><small style="color:#64748b;">${lugar.descripcion || (lugar.categoria ? lugar.categoria : 'Villa Mercedes')}</small>`;
-            if (lat && lng) {
-                li.onclick = () => encontrarViajeMasOptimo(parseFloat(lat), parseFloat(lng), lugar.nombre);
-            }
             contenedorResultados.appendChild(li);
         });
     }
@@ -251,12 +242,21 @@ async function ejecutarBusqueda() {
             li.onmouseout = () => li.style.background = 'white';
 
             li.innerHTML = `<b>${nombreFormateado}</b> <br><small style="color:#64748b;">${descripcion || 'Villa Mercedes'}</small>`;
-            li.onclick = () => encontrarViajeMasOptimo(parseFloat(lugar.lat), parseFloat(lugar.lon || lugar.lng), nombreFormateado);
+            
+            // 🔥 SOLUCIÓN AL CONGELAMIENTO
+            li.onclick = () => {
+                mostrarCargandoViaje('Calculando la mejor ruta...');
+                setTimeout(() => {
+                    encontrarViajeMasOptimo(parseFloat(lugar.lat), parseFloat(lugar.lon || lugar.lng), nombreFormateado);
+                    cerrarCargandoViaje();
+                }, 150);
+            };
+            
             contenedorResultados.appendChild(li);
         });
     }
 
-    if (paradasEncontradas.length === 0 && lugaresEncontrados.length === 0 && referencias.length === 0) {
+    if (paradasEncontradas.length === 0 && lugaresEncontrados.length === 0) {
         contenedorResultados.innerHTML = '<li style="padding: 10px; color: #ef4444;">No encontramos coincidencias.</li>';
     }
 }
@@ -295,6 +295,91 @@ document.addEventListener('click', function (e) {
  *   Fase 2 → se prueban los transbordos en la escala de Gral. Paz.
  *   Fase 3 → se aplica el mejor resultado a la interfaz.
  */
+
+/** Muestra un cartel de carga con colectivo dando vueltas y consejos */
+function mostrarCargandoViaje(texto = 'Buscando el mejor viaje...') {
+    cerrarCargandoViaje();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-cargando-viaje';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); z-index: 100000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px); font-family: sans-serif;';
+
+    const box = document.createElement('div');
+    box.style.cssText = 'background: white; width: 90%; max-width: 330px; padding: 30px 25px; border-radius: 18px; text-align: center; box-shadow: 0 18px 45px rgba(0,0,0,0.35); display: flex; flex-direction: column; align-items: center; gap: 14px;';
+
+    if (!document.getElementById('estilos-carga-colectivo-viejo')) {
+        const style = document.createElement('style');
+        style.id = 'estilos-carga-colectivo-viejo';
+        style.textContent = `
+            @keyframes girar-colectivo-viejo {
+                0% { transform: rotate(0deg) translateX(40px) rotate(0deg); }
+                100% { transform: rotate(360deg) translateX(40px) rotate(-360deg); }
+            }
+            @keyframes pulsar-consejo-viejo {
+                0%, 100% { opacity: 0.7; }
+                50% { opacity: 1; }
+            }
+            @keyframes brillar-ruta {
+                0%, 100% { opacity: 0.4; }
+                50% { opacity: 0.9; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    const consejos = [
+        "🚌 El colectivo ya está dando la vuelta por tu zona...",
+        "💡 Buscando el que te deje más cerca de tu destino",
+        "🚏 Revisando paradas de subida y bajada",
+        "⏱️ Calculando caminata + colectivo al milímetro",
+        "🔍 Analizando todas las líneas para ahorrarte pasos",
+        "📍 Buscando la opción más práctica para llegar",
+        "🛣️ Trazando el recorrido ideal para este viaje"
+    ];
+
+    box.innerHTML = `
+        <div style="position: relative; width: 95px; height: 95px; margin-bottom: 4px;">
+            <div style="position: absolute; top: 50%; left: 50%; width: 80px; height: 80px; margin: -40px 0 0 -40px; border: 3px dashed #cbd5e1; border-radius: 50%; animation: brillar-ruta 2.2s ease-in-out infinite;"></div>
+            <div style="position: absolute; top: 50%; left: 50%; font-size: 30px; animation: girar-colectivo-viejo 1.9s linear infinite;">🚌</div>
+            <div style="position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; background: #2563eb; border-radius: 50%; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);"></div>
+        </div>
+        <div style="font-weight: bold; color: #1e293b; font-size: 1rem;">${texto}</div>
+        <div id="consejo-carga-viejo" style="font-size: 0.9rem; color: #475569; min-height: 42px; display: flex; align-items: center; justify-content: center; line-height: 1.4; animation: pulsar-consejo-viejo 2s ease-in-out infinite; padding: 0 6px;"></div>
+        <div style="font-size: 0.75rem; color: #94a3b8; margin-top: -4px;">Un toque más... ya te muestro las opciones</div>
+    `;
+
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    const consejoEl = box.querySelector('#consejo-carga-viejo');
+    let indexConsejo = 0;
+    consejoEl.textContent = consejos[indexConsejo];
+
+    window._intervalConsejosCargaViejo = setInterval(() => {
+        indexConsejo = (indexConsejo + 1) % consejos.length;
+        consejoEl.style.opacity = '0';
+        setTimeout(() => {
+            consejoEl.textContent = consejos[indexConsejo];
+            consejoEl.style.opacity = '1';
+        }, 250);
+    }, 2000);
+}
+
+/** Cierra el cartel de carga */
+function cerrarCargandoViaje() {
+    const modal = document.getElementById('modal-cargando-viaje');
+    if (modal) modal.remove();
+
+    if (window._intervalConsejosCargaViejo) {
+        clearInterval(window._intervalConsejosCargaViejo);
+        delete window._intervalConsejosCargaViejo;
+    }
+    if (window._intervalConsejosCarga) {
+        clearInterval(window._intervalConsejosCarga);
+        delete window._intervalConsejosCarga;
+    }
+}
+
 // Variables globales para recordar las opciones si el usuario quiere cambiar de opinión
 let opcionesViajeActuales = [];
 let infoDestinoActual = null;
@@ -438,7 +523,7 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
 
     opcionesViajeActuales = Array.from(opcionesMap.values())
         .sort((a, b) => a.metrosDestino - b.metrosDestino || a.tiempoEstimado - b.tiempoEstimado)
-        .slice(0, 2);
+        .slice(0, 3);
 
     if (opcionesViajeActuales.length === 0) {
         alert('No encontramos opciones viables para acercarte a ese destino.');
@@ -447,7 +532,6 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
 
     mostrarListaDeOpciones();
 }
-
 /** Genera un cartel flotante (modal) en el centro de la pantalla con solo las 2 mejores opciones */
 function mostrarListaDeOpciones() {
     limpiarMapa();
@@ -465,10 +549,10 @@ function mostrarListaDeOpciones() {
     const modalContent = document.createElement('div');
     modalContent.style.cssText = 'background: white; width: 90%; max-width: 380px; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-family: sans-serif;';
     
-    let htmlOpciones = `<h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #1e293b; text-align: center;">🚌 Opciones más cercanas a:<br><span style="color: #2563eb;">${infoDestinoActual.nombre}</span></h3>`;
+    let htmlOpciones = `<h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #1e293b; text-align: center;">🚌 3 mejores opciones para ir a:<br><span style="color: #2563eb;">${infoDestinoActual.nombre}</span></h3>`;
     
-    // Generar botones limitados a 2
-    opcionesViajeActuales.forEach((opcion, index) => {
+    // Generar botones limitados a 3
+    opcionesViajeActuales.slice(0, 3).forEach((opcion, index) => {
         if (opcion.tipo === 'directo') {
             htmlOpciones += `
                 <button onclick="seleccionarOpcionViaje(${index})" style="width: 100%; text-align: left; padding: 12px; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; cursor: pointer;">

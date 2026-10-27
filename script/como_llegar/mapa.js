@@ -98,7 +98,31 @@ function calcularRutaYTiempo() {
     if (!ubicacionUsuario || !recorridoActual) return;
 
     const origenParada = recorridoActual.origenParada;
-    const destinoParada = recorridoActual.paradas[Number(document.getElementById('select-destino').value)];
+    let destinoParada = recorridoActual.paradas[Number(document.getElementById('select-destino').value)];
+    
+    // Si hay un destino buscado por el usuario (desde el buscador inteligente), priorizar la parada más cercana a ese lugar
+    if (typeof infoDestinoActual !== 'undefined' && infoDestinoActual && recorridoActual.paradas && recorridoActual.paradas.length > 0) {
+        let mejorParada = null;
+        let mejorIdx = -1;
+        let menorDist = Infinity;
+        recorridoActual.paradas.forEach((parada, idx) => {
+            const d = calcularDistancia([infoDestinoActual.lat, infoDestinoActual.lng], [parada.lat, parada.lng]);
+            if (d < menorDist) {
+                menorDist = d;
+                mejorParada = parada;
+                mejorIdx = idx;
+            }
+        });
+        if (mejorParada) {
+            destinoParada = mejorParada;
+            // Actualizar el select para reflejar la parada correcta
+            const selDestino = document.getElementById('select-destino');
+            if (selDestino) {
+                selDestino.value = mejorIdx;
+            }
+        }
+    }
+    
     if (!origenParada || !destinoParada) return;
 
     if (marcadorOrigenSugerido) mapa.removeLayer(marcadorOrigenSugerido);
@@ -146,6 +170,7 @@ function calcularRutaYTiempo() {
 /**
  * Traza la ruta a pie con el servidor público de OSRM (perfil peatonal).
  */
+
 function trazarRutaAPie(desde, hasta) {
     if (routingControlPie) mapa.removeControl(routingControlPie);
 
@@ -155,14 +180,15 @@ function trazarRutaAPie(desde, hasta) {
             L.latLng(hasta[0], hasta[1])
         ],
         router: L.Routing.osrmv1({
-            serviceUrl: 'https://router.project-osrm.org/route/v1',
+            // Usamos un servidor OSRM público dedicado exclusivamente a peatones
+            serviceUrl: 'https://routing.openstreetmap.de/routed-foot/route/v1',
             profile: 'foot'
         }),
         show: false,
         addWaypoints: false,
         draggableWaypoints: false,
         fitSelectedRoutes: false,
-        createMarker: function () { return null; },
+        createMarker: function () { return null; }, // Evita que dibuje pines extra
         lineOptions: {
             styles: [{ color: '#8b5cf6', weight: 6, dashArray: '8, 8', opacity: 0.9 }]
         }
