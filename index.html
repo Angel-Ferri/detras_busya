@@ -29,7 +29,8 @@
             <h2>Opciones de Consulta</h2>
             
             <div class="menu-lineas">
-                <button class="linea-card" onclick="gtag('event', 'seleccionar_linea', {'nombre_linea': 'Linea_A'}); seleccionarLinea('linea_a')">
+                <!-- Botones directos de las Líneas -->
+                <button class="linea-card" onclick="seleccionarLinea('linea_a')">
                     <div class="linea-badge badge-a">A</div>
                     <div class="linea-info">
                         <h3>Línea A</h3>
@@ -38,7 +39,7 @@
                     <span class="arrow">➔</span>
                 </button>
 
-                <button class="linea-card" onclick="gtag('event', 'seleccionar_linea', {'nombre_linea': 'Linea_E'}); seleccionarLinea('linea_e')">
+                <button class="linea-card" onclick="seleccionarLinea('linea_e')">
                     <div class="linea-badge badge-e">E</div>
                     <div class="linea-info">
                         <h3>Línea E</h3>
@@ -47,7 +48,7 @@
                     <span class="arrow">➔</span>
                 </button>
 
-                <button class="linea-card" onclick="gtag('event', 'seleccionar_linea', {'nombre_linea': 'Linea_Este'}); seleccionarLinea('linea_este')">
+                <button class="linea-card" onclick="seleccionarLinea('linea_este')">
                     <div class="linea-badge badge-este">Este</div>
                     <div class="linea-info">
                         <h3>Línea Zona Este</h3>
@@ -56,7 +57,7 @@
                     <span class="arrow">➔</span>
                 </button>
 
-                <button class="linea-card" onclick="gtag('event', 'seleccionar_linea', {'nombre_linea': 'Linea_Oeste'}); seleccionarLinea('linea_oeste')">
+                <button class="linea-card" onclick="seleccionarLinea('linea_oeste')">
                     <div class="linea-badge badge-oeste">Oeste</div>
                     <div class="linea-info">
                         <h3>Línea Zona Oeste</h3>
@@ -81,6 +82,7 @@
 
         <footer class="app-footer">
             <a href="chofer.html" class="driver-access-link">⚙️ Panel de Control</a>
+            <span style="color:#cbd5e1; margin: 0 8px;">·</span>
         </footer>
     </div>
 

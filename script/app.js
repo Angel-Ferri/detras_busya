@@ -3,15 +3,8 @@
 
 async function seleccionarLinea(idONombreArchivo) {
     try {
-        // 1. Normaliza el ID por si se pasa "linea_e_horarios.json" o simplemente "linea_e"
+        // Normaliza el ID por si se pasa "linea_e_horarios.json" o simplemente "linea_e"
         let idLinea = idONombreArchivo.replace('_horarios.json', '').replace('.json', '');
-
-        // 2. Le enviamos el dato limpio a Google Analytics
-        if (typeof gtag === 'function') {
-            gtag('event', 'seleccionar_linea', {
-                'nombre_linea': idLinea
-            });
-        }
 
         // Usamos la función cargadora definida en script/dias.js
         const datosCompletos = await cargarDatosLineaCompleta(idLinea);

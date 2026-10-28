@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Busya - Editor de paradas</title>
+    <link rel="icon" href="autobus-escolar.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="estilos/panel_paradas.css">
+</head>
+<body>
+
+    <header class="pp-header">
+        <div class="pp-brand">
+            <img class="pp-logo" src="estilos/img/logo.jpeg" alt="">
+            <div>
+                <strong>Busya</strong>
+                <span>Editor de paradas</span>
+            </div>
+        </div>
+
+        <div class="pp-header-actions">
+            <span id="pp-file-status" class="pp-file-status">Cargando datos…</span>
+            <button id="pp-open-file" class="pp-btn pp-btn-ghost" type="button"
+                    title="Vincular datos/paradas_manuales.json para guardar directo en el proyecto">
+                Vincular archivo
+            </button>
+            <button id="pp-save" class="pp-btn pp-btn-primary" type="button">Guardar</button>
+            <a class="pp-btn pp-btn-ghost" href="index.html">Volver</a>
+        </div>
+    </header>
+
+    <main class="pp-layout">
+        <aside class="pp-sidebar">
+            <div class="pp-sidebar-head">
+                <h1>Paradas</h1>
+                <p id="pp-line-name">Cargando…</p>
+            </div>
+
+            <div id="pp-line-tabs" class="pp-line-tabs" role="tablist" aria-label="Línea"></div>
+
+            <div class="pp-tools">
+                <label class="pp-search">
+                    <span class="pp-sr-only">Buscar parada</span>
+                    <input id="pp-search" type="search" placeholder="Buscar por nombre…" autocomplete="off">
+                </label>
+                <button id="pp-add" class="pp-btn pp-btn-primary pp-btn-add" type="button">+ Agregar</button>
+            </div>
+
+            <div class="pp-list-meta">
+                <span id="pp-count">0 paradas</span>
+                <span id="pp-dirty" class="pp-dirty hidden">Cambios sin guardar</span>
+            </div>
+
+            <ol id="pp-list" class="pp-list" aria-label="Paradas de la línea"></ol>
+        </aside>
+
+        <section class="pp-map-wrap" aria-label="Mapa de paradas">
+            <div id="pp-map" class="pp-map"></div>
+            <div id="pp-map-hint" class="pp-map-hint">Hacé clic en el mapa para ubicar una parada nueva.</div>
+            <div class="pp-map-legend">
+                <span><i class="pp-dot pp-dot-route"></i> Recorrido</span>
+                <span><i class="pp-dot pp-dot-stop"></i> Parada</span>
+                <span><i class="pp-dot pp-dot-edit"></i> En edición</span>
+            </div>
+        </section>
+
+        <aside class="pp-editor" id="pp-editor" aria-live="polite">
+            <div id="pp-editor-empty" class="pp-empty">
+                <div class="pp-empty-icon">📍</div>
+                <h2>Elegí una parada</h2>
+                <p>Seleccioná una parada de la lista o del mapa para editarla. También podés agregar una nueva.</p>
+            </div>
+
+            <form id="pp-form" class="pp-form hidden" autocomplete="off">
+                <div class="pp-form-head">
+                    <div>
+                        <span id="pp-form-kicker" class="pp-kicker">Nueva parada</span>
+                        <h2 id="pp-form-title">Agregar parada</h2>
+                    </div>
+                    <button id="pp-form-close" class="pp-icon-btn" type="button" aria-label="Cerrar editor">×</button>
+                </div>
+
+                <label class="pp-field">
+                    <span>Nombre de la parada *</span>
+                    <input id="pp-name" type="text" maxlength="120" required
+                           placeholder="Ej.: Av. Mitre y San Luis">
+                </label>
+
+                <div class="pp-coords">
+                    <label class="pp-field">
+                        <span>Latitud *</span>
+                        <input id="pp-lat" type="number" step="any" required placeholder="-33.675">
+                    </label>
+                    <label class="pp-field">
+                        <span>Longitud *</span>
+                        <input id="pp-lng" type="number" step="any" required placeholder="-65.460">
+                    </label>
+                </div>
+
+                <div class="pp-coord-actions">
+                    <button id="pp-gps" class="pp-btn pp-btn-ghost pp-btn-sm" type="button">📍 Usar mi ubicación</button>
+                    <span id="pp-coord-note" class="pp-note">También podés hacer clic en el mapa.</span>
+                </div>
+
+                <label class="pp-field">
+                    <span>Descripción <small>(opcional)</small></span>
+                    <textarea id="pp-desc" rows="2" maxlength="240"
+                              placeholder="Referencia, esquina, etc."></textarea>
+                </label>
+
+                <label class="pp-field" id="pp-position-field">
+                    <span>Posición en el recorrido</span>
+                    <input id="pp-position" type="number" min="1" step="1">
+                    <small id="pp-position-help">1 = primera parada</small>
+                </label>
+
+                <p id="pp-form-error" class="pp-error hidden" role="alert"></p>
+
+                <div class="pp-form-actions">
+                    <button id="pp-apply" class="pp-btn pp-btn-primary" type="submit">Guardar parada</button>
+                    <button id="pp-cancel" class="pp-btn pp-btn-ghost" type="button">Cancelar</button>
+                    <button id="pp-delete" class="pp-btn pp-btn-danger" type="button">Eliminar</button>
+                </div>
+
+                <p class="pp-form-footnote">
+                    Esto modifica la vista previa. Para escribir el archivo, usá <strong>Guardar</strong> arriba.
+                    El planificador y <code>paradas.html</code> leen este mismo archivo.
+                </p>
+            </form>
+        </aside>
+    </main>
+
+    <div id="pp-toast" class="pp-toast" role="status" aria-live="polite"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script/panel_paradas.js"></script>
+</body>
+</html>

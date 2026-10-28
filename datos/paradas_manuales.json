@@ -1,6 +1,6 @@
 {
   "_instrucciones": "Archivo de paradas editado a mano. Cada parada necesita nombre, lat y lng. El orden de la lista es el orden del recorrido: si agregas una parada, insertala en la posicion correcta. La app compara tu GPS contra estas coordenadas.",
-  "_actualizado": "2026-10-24",
+  "_actualizado": "2026-10-28",
   "lineas": {
     "lineaa": {
       "nombre": "Linea A",
@@ -464,6 +464,18 @@
           "nombre": "Av. Adolfo Enrique Pérez y Mahatma Gandhi",
           "lat": -33.6881608,
           "lng": -65.5009448
+        },
+        {
+          "nombre": "Av. Jorge omar Carzola y Av. Mario Erns",
+          "lat": -33.691113,
+          "lng": -65.504115,
+          "descripcion": "frente de la escuela"
+        },
+        {
+          "nombre": "Hospital de la ribera",
+          "lat": -33.695288,
+          "lng": -65.506046,
+          "descripcion": "Frente del hospital"
         },
         {
           "nombre": "25 de Mayo y Estado de Israel",

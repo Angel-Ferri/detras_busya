@@ -148,8 +148,49 @@ function obtenerNumeroLinea(lineaClave) {
 // CARGAR JSON GEOGRÁFICO
 // ============================================================
 
+function obtenerClaveLinea(lineaClave) {
+    const numeroLinea = obtenerNumeroLinea(lineaClave);
+    const claves = {
+        A: "lineaa",
+        E: "lineae",
+        Este: "lineaeste",
+        Oeste: "lineaoeste"
+    };
+    return claves[numeroLinea] || null;
+}
+
 async function cargarDatosGeograficos(linea) {
     const numeroLinea = obtenerNumeroLinea(linea);
+    const claveLinea = obtenerClaveLinea(linea);
+
+    // Fuente principal: paradas_manuales.json, el mismo archivo que edita
+    // panel_paradas.html. Así las paradas nuevas aparecen también acá.
+    if (claveLinea) {
+        try {
+            const respuestaManual = await fetch("datos/paradas_manuales.json", { cache: "no-store" });
+            if (respuestaManual.ok) {
+                const manual = await respuestaManual.json();
+                const lineaManual = manual && manual.lineas ? manual.lineas[claveLinea] : null;
+
+                if (lineaManual && Array.isArray(lineaManual.paradas) && lineaManual.paradas.length > 0) {
+                    return {
+                        linea: { nombre: lineaManual.nombre || linea },
+                        paradas: lineaManual.paradas
+                            .map(p => ({
+                                ...p,
+                                lat: Number(p.lat),
+                                lng: Number(p.lng !== undefined ? p.lng : p.lon)
+                            }))
+                            .filter(p => p.nombre && Number.isFinite(p.lat) && Number.isFinite(p.lng)),
+                        recorrido: null
+                    };
+                }
+            }
+        } catch (e) {
+            console.warn("No se pudo leer paradas_manuales.json, se usa el respaldo:", e.message);
+        }
+    }
+
     const archivo = `datos/coordenadas/paradas_secundarias_Linea_${numeroLinea}.json`;
 
     try {

@@ -177,6 +177,11 @@ async function cargarRecorridos() {
                 recorrido: normalizarCoordenadas(info.recorrido)
             };
         }
+        // Las paradas editadas desde panel_paradas.html viven en paradas_manuales.json.
+        // Se aplican después de lineas_unificadas.json para que las altas y las
+        // correcciones de coordenadas se vean también en el planificador.
+        await aplicarParadasManuales();
+
         origenDeDatos = 'local';
         return Object.keys(datosLineasCargados).length > 0;
     } catch (e) {
