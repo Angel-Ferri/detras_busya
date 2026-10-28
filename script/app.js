@@ -1,10 +1,18 @@
 
 // script/app.js
 
+
 async function seleccionarLinea(idONombreArchivo) {
     try {
-        // Normaliza el ID por si se pasa "linea_e_horarios.json" o simplemente "linea_e"
+        // 1. Normaliza el ID por si se pasa "linea_e_horarios.json" o simplemente "linea_e"
         let idLinea = idONombreArchivo.replace('_horarios.json', '').replace('.json', '');
+
+        // 2. Le enviamos el dato limpio a Google Analytics
+        if (typeof gtag === 'function') {
+            gtag('event', 'seleccionar_linea', {
+                'nombre_linea': idLinea
+            });
+        }
 
         // Usamos la función cargadora definida en script/dias.js
         const datosCompletos = await cargarDatosLineaCompleta(idLinea);
@@ -19,6 +27,7 @@ async function seleccionarLinea(idONombreArchivo) {
         alert("Ocurrió un error al cargar la información de la línea seleccionada.");
     }
 }
+
 
 // Lógica para el modal del Pase Estudiantil en el Inicio
 function abrirModalEstudiante() {
