@@ -174,6 +174,78 @@ function distanciaDeRutaEntreParadas(linea, indiceDesde, indiceHasta) {
 // =====================================================
 
 /**
+ * Devuelve todas las horas de hoy en que el colectivo pasa por una parada,
+ * ordenadas de menor a mayor. Las paradas sin horario publicado se calculan
+ * interpolando entre las paradas de la grilla, igual que antes.
+ *
+ * @param {string} keyLinea     clave de la línea ('lineaa', 'lineae'...)
+ * @param {number} indiceParada posición de la parada en la lista de la línea
+ *
+ * @returns {Array<{minutos: number, esInterpolado: boolean}>}
+ */
+function calcularHorariosDelDiaParada(keyLinea, indiceParada) {
+    const linea = datosLineasCargados[keyLinea];
+    if (!linea || !linea.paradas[indiceParada]) return [];
+
+    const servicio = obtenerServicioDeHoy(keyLinea);
+    if (!servicio || !servicio.horarios || !servicio.horarios.length) return [];
+
+    const anclas = obtenerTablaDeGrilla(keyLinea);
+    if (!anclas.length) return [];
+
+    const resultados = [];
+
+    // ── 1. La parada tiene horario publicado ──
+    const anclaExacta = anclas.find(a => a.indiceParada === indiceParada);
+    if (anclaExacta) {
+        for (const fila of servicio.horarios) {
+            const minutos = obtenerMinutosDesdeCadena(fila[anclaExacta.indiceEnGrilla]);
+            if (minutos !== null) resultados.push({ minutos, esInterpolado: false });
+        }
+    } else {
+        // ── 2. La parada NO tiene horario: se calcula con las vecinas ──
+        const anteriores = anclas.filter(a => a.indiceParada < indiceParada);
+        const siguientes = anclas.filter(a => a.indiceParada > indiceParada);
+        const anclaAntes = anteriores.length ? anteriores[anteriores.length - 1] : null;
+        const anclaDespues = siguientes.length ? siguientes[0] : null;
+
+        for (const fila of servicio.horarios) {
+            const tiempoAntes = anclaAntes ? obtenerMinutosDesdeCadena(fila[anclaAntes.indiceEnGrilla]) : null;
+            const tiempoDespues = anclaDespues ? obtenerMinutosDesdeCadena(fila[anclaDespues.indiceEnGrilla]) : null;
+
+            let minutos = null;
+
+            if (tiempoAntes !== null && tiempoDespues !== null) {
+                // Está entre dos paradas de grilla: se reparte el tiempo según
+                // la distancia que falta para llegar a la siguiente.
+                const fraccion = (indiceParada - anclaAntes.indiceParada)
+                    / (anclaDespues.indiceParada - anclaAntes.indiceParada);
+                minutos = Math.round(tiempoAntes + (tiempoDespues - tiempoAntes) * fraccion);
+            } else if (tiempoAntes !== null) {
+                // No hay ancla después: se estima el viaje con la velocidad del colectivo.
+                const km = distanciaDeRutaEntreParadas(linea, anclaAntes.indiceParada, indiceParada);
+                minutos = Math.round(tiempoAntes + (km / VELOCIDAD_COLECTIVO_KMH) * 60);
+            } else if (tiempoDespues !== null) {
+                // No hay ancla antes: se estima hacia atrás.
+                const km = distanciaDeRutaEntreParadas(linea, anclaDespues.indiceParada, indiceParada);
+                minutos = Math.round(tiempoDespues - (km / VELOCIDAD_COLECTIVO_KMH) * 60);
+            }
+
+            if (minutos !== null) resultados.push({ minutos, esInterpolado: true });
+        }
+    }
+
+    // Las interpolaciones hacia atrás pueden dar horas negativas (antes de
+    // la medianoche). No son horarios válidos del día, así que no se muestran.
+    const validos = resultados
+        .filter(h => h.minutos >= 0)
+        .sort((a, b) => a.minutos - b.minutos);
+
+    // Si dos viajes caen a la misma hora, mostramos una sola vez.
+    return validos.filter((h, i) => i === 0 || h.minutos !== validos[i - 1].minutos);
+}
+
+/**
  * ¿A qué hora pasa el bus por una parada?
  *
  * @param {string} keyLinea       clave de la línea ('lineaa', 'lineae'...)
@@ -184,78 +256,16 @@ function distanciaDeRutaEntreParadas(linea, indiceDesde, indiceHasta) {
  *          esInterpolado = true cuando la hora se calculó, no viene publicada.
  */
 function calcularHorarioEstimadoParada(keyLinea, indiceParada, minutosActuales) {
-    const linea = datosLineasCargados[keyLinea];
-    if (!linea || !linea.paradas[indiceParada]) return null;
+    const horarios = calcularHorariosDelDiaParada(keyLinea, indiceParada);
+    if (!horarios.length) return null;
 
-    const servicio = obtenerServicioDeHoy(keyLinea);
-    if (!servicio || !servicio.horarios || !servicio.horarios.length) return null;
-
-    const anclas = obtenerTablaDeGrilla(keyLinea);
-    if (!anclas.length) return null;
-
-    // ── 1. La parada tiene horario publicado ──
-    const anclaExacta = anclas.find(a => a.indiceParada === indiceParada);
-    if (anclaExacta) {
-        const horas = [];
-        for (const fila of servicio.horarios) {
-            const minutos = obtenerMinutosDesdeCadena(fila[anclaExacta.indiceEnGrilla]);
-            if (minutos !== null) horas.push(minutos);
-        }
-        horas.sort((a, b) => a - b);
-        if (horas.length) {
-            const siguiente = horas.find(h => h >= minutosActuales);
-            const elegido = siguiente !== undefined ? siguiente : horas[0];
-            return {
-                horaEstimadaStr: convertirMinutosAHora(elegido),
-                minutosLlegada: elegido,
-                esInterpolado: false
-            };
-        }
-    }
-
-    // ── 2. La parada NO tiene horario: se calcula con las vecinas ──
-    const anteriores = anclas.filter(a => a.indiceParada < indiceParada);
-    const siguientes = anclas.filter(a => a.indiceParada > indiceParada);
-    const anclaAntes = anteriores.length ? anteriores[anteriores.length - 1] : null;
-    const anclaDespues = siguientes.length ? siguientes[0] : null;
-
-    const candidatos = [];
-
-    for (const fila of servicio.horarios) {
-        const tiempoAntes = anclaAntes ? obtenerMinutosDesdeCadena(fila[anclaAntes.indiceEnGrilla]) : null;
-        const tiempoDespues = anclaDespues ? obtenerMinutosDesdeCadena(fila[anclaDespues.indiceEnGrilla]) : null;
-
-        let minutos = null;
-
-        if (tiempoAntes !== null && tiempoDespues !== null) {
-            // Está entre dos paradas de grilla: se reparte el tiempo según
-            // la distancia que falta para llegar a la siguiente.
-            const fraccion = (indiceParada - anclaAntes.indiceParada)
-                / (anclaDespues.indiceParada - anclaAntes.indiceParada);
-            minutos = Math.round(tiempoAntes + (tiempoDespues - tiempoAntes) * fraccion);
-        } else if (tiempoAntes !== null) {
-            // No hay ancla después: se estima el viaje con la velocidad del colectivo.
-            const km = distanciaDeRutaEntreParadas(linea, anclaAntes.indiceParada, indiceParada);
-            minutos = Math.round(tiempoAntes + (km / VELOCIDAD_COLECTIVO_KMH) * 60);
-        } else if (tiempoDespues !== null) {
-            // No hay ancla antes: se estima hacia atrás.
-            const km = distanciaDeRutaEntreParadas(linea, anclaDespues.indiceParada, indiceParada);
-            minutos = Math.round(tiempoDespues - (km / VELOCIDAD_COLECTIVO_KMH) * 60);
-        }
-
-        if (minutos !== null) candidatos.push(minutos);
-    }
-
-    if (!candidatos.length) return null;
-
-    candidatos.sort((a, b) => a - b);
-    const siguiente = candidatos.find(h => h >= minutosActuales);
-    const elegido = siguiente !== undefined ? siguiente : candidatos[0];
+    const siguiente = horarios.find(h => h.minutos >= minutosActuales);
+    const elegido = siguiente !== undefined ? siguiente : horarios[0];
 
     return {
-        horaEstimadaStr: convertirMinutosAHora(elegido),
-        minutosLlegada: elegido,
-        esInterpolado: true
+        horaEstimadaStr: convertirMinutosAHora(elegido.minutos),
+        minutosLlegada: elegido.minutos,
+        esInterpolado: elegido.esInterpolado
     };
 }
 

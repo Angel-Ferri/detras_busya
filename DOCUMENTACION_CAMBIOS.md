@@ -48,3 +48,13 @@ Cuando el usuario busca un destino con la **búsqueda inteligente** (desde `como
 
 - La lógica respeta el cálculo de `metrosDestino` (distancia caminando desde la parada de bajada hasta el destino buscado).
 - Se mantiene la compatibilidad con el resto del sistema de mapas, rutas y horarios.
+
+### Archivos modificados: `script/como_llegar/planificador.js` y `script/como_llegar/mapa.js`
+
+#### Horarios próximos en el itinerario
+
+- Se agregó `obtenerProximos4HorariosMinutos()` para obtener los próximos 4 horarios de una parada, expresados en minutos desde la medianoche.
+- Se agregó `formatearHorariosHTML()` para mostrar esos horarios en un cartel reutilizable dentro del resumen del viaje.
+- En los viajes directos, las llegadas al destino se calculan sumando el tiempo de viaje a los mismos 4 colectivos que se toman en el origen.
+- En los viajes con transbordo se muestran 4 horarios en la subida y 4 en la bajada de la L1, 4 en la parada de escala y 4 en el destino de la L2. Cada llegada de la L1 se engancha con el primer colectivo disponible de la L2 después de caminar la escala.
+- La ruta manual (`mapa.js`) también muestra los próximos 4 horarios en la subida y las llegadas correspondientes en la bajada.

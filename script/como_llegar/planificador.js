@@ -362,7 +362,9 @@ function mostrarCargandoViaje(texto = 'Buscando el mejor viaje...') {
             <div class="punto-parada" style="right: 10%;"></div>
             
             <!-- Colectivo animado -->
-            <div style="position: absolute; top: 50%; font-size: 32px; margin-top: -22px; animation: mover-colectivo 2.5s ease-in-out infinite; z-index: 2;">🚌</div>
+            <div style="position: absolute; top: 50%; margin-top: -22px; animation: mover-colectivo 2.5s ease-in-out infinite; z-index: 2;">
+            <img src="estilos/img/bus_animacion.png" style="width: 32px; height: auto;">
+            </div>
         </div>
         
         <div style="font-weight: bold; color: #1e293b; font-size: 1rem;">${texto}</div>
@@ -681,82 +683,25 @@ function buscarMejorDirectoAbsoluto(latDest, lngDest, minCamina, minBus) {
     return mejorViaje;
 }
 
-/** Genera un cartel flotante (modal) en el centro de la pantalla con las opciones dinámicas */
 function mostrarListaDeOpciones() {
     limpiarMapa();
     
-    // Mostramos un pin en el destino para que el usuario se ubique de fondo
     marcadorDestinoBuscado = L.marker([infoDestinoActual.lat, infoDestinoActual.lng]).addTo(mapa)
         .bindPopup(`📍 <b>Destino:</b> ${infoDestinoActual.nombre}`).openPopup();
     mapa.setView([infoDestinoActual.lat, infoDestinoActual.lng], 14);
 
-    // Si ya existe un modal anterior, lo borramos por seguridad
     cerrarModalOpciones();
 
-    // 1. Crear el fondo oscuro del modal
     const overlay = document.createElement('div');
     overlay.id = 'modal-opciones-viaje';
     overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); z-index: 99999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px);';
     
-    // 2. Crear la caja central
     const modalContent = document.createElement('div');
     modalContent.style.cssText = 'background: white; width: 90%; max-width: 380px; max-height: 85vh; overflow-y: auto; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-family: sans-serif;';
     
-    // Título dinámico que se adapta si hay 3 o 4 opciones
-    const cantidadOpciones = opcionesViajeActuales.length;
+    const cantidadOpciones = Math.min(opcionesViajeActuales.length, 4);
     let htmlOpciones = `<h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #1e293b; text-align: center;">🚌 ${cantidadOpciones} opciones para ir a:<br><span style="color: #2563eb;">${infoDestinoActual.nombre}</span></h3>`;
     
-    // 3. Generar los botones recorriendo todo el array (sea de 3 o de 4)
-    opcionesViajeActuales.forEach((opcion, index) => {
-        if (opcion.tipo === 'directo') {
-            htmlOpciones += `
-                <button onclick="seleccionarOpcionViaje(${index})" style="width: 100%; text-align: left; padding: 12px; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; cursor: pointer;">
-                    <div style="font-weight: bold; color: #2563eb; font-size: 1.05rem;">🚌 ${opcion.nombreLinea} (Directo)</div>
-                    <div style="font-size: 0.9rem; color: #475569; margin-top: 6px;">⏱️ Tiempo total: <b>~${opcion.tiempoEstimado} min</b></div>
-                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">📍 Caminás ${opcion.metrosDestino}m al llegar.</div>
-                </button>`;
-        } else {
-            htmlOpciones += `
-                <button onclick="seleccionarOpcionViaje(${index})" style="width: 100%; text-align: left; padding: 12px; margin-bottom: 10px; border: 2px solid #fed7aa; border-radius: 8px; background: #fff7ed; cursor: pointer;">
-                    <div style="font-weight: bold; color: #ea580c; font-size: 1.05rem;">🔄 ${opcion.L1.nombre} ➔ ${opcion.L2.nombre}</div>
-                    <div style="font-size: 0.9rem; color: #475569; margin-top: 6px;">⏱️ Tiempo total: <b>~${opcion.tiempoEstimado} min</b></div>
-                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">🚶 Caminás ${opcion.distEscala}m en la escala y ${opcion.metrosDestino}m al destino.</div>
-                </button>`;
-        }
-    });
-
-    // 4. Agregar botón de cancelar
-    htmlOpciones += `<button onclick="cerrarModalOpciones()" style="width: 100%; padding: 10px; margin-top: 5px; border: none; background: transparent; color: #64748b; cursor: pointer; font-weight: bold;">Cancelar</button>`;
-
-    modalContent.innerHTML = htmlOpciones;
-    overlay.appendChild(modalContent);
-    document.body.appendChild(overlay);
-}
-
-/** Genera un cartel flotante (modal) en el centro de la pantalla con las opciones */
-function mostrarListaDeOpciones() {
-    limpiarMapa();
-    
-    // Mostramos un pin en el destino para que el usuario se ubique de fondo
-    marcadorDestinoBuscado = L.marker([infoDestinoActual.lat, infoDestinoActual.lng]).addTo(mapa)
-        .bindPopup(`📍 <b>Destino:</b> ${infoDestinoActual.nombre}`).openPopup();
-    mapa.setView([infoDestinoActual.lat, infoDestinoActual.lng], 14);
-
-    // Si ya existe un modal anterior, lo borramos por seguridad
-    cerrarModalOpciones();
-
-    // 1. Crear el fondo oscuro del modal
-    const overlay = document.createElement('div');
-    overlay.id = 'modal-opciones-viaje';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); z-index: 99999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px);';
-    
-    // 2. Crear la caja central
-    const modalContent = document.createElement('div');
-    modalContent.style.cssText = 'background: white; width: 90%; max-width: 380px; max-height: 85vh; overflow-y: auto; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-family: sans-serif;';
-    
-    let htmlOpciones = `<h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #1e293b; text-align: center;">🚌 Opciones para ir a:<br><span style="color: #2563eb;">${infoDestinoActual.nombre}</span></h3>`;
-    
-    // 3. Generar los botones de las rutas
     opcionesViajeActuales.slice(0, 4).forEach((opcion, index) => {
         if (opcion.tipo === 'directo') {
             htmlOpciones += `
@@ -775,7 +720,6 @@ function mostrarListaDeOpciones() {
         }
     });
 
-    // 4. Agregar botón de cancelar
     htmlOpciones += `<button onclick="cerrarModalOpciones()" style="width: 100%; padding: 10px; margin-top: 5px; border: none; background: transparent; color: #64748b; cursor: pointer; font-weight: bold;">Cancelar</button>`;
 
     modalContent.innerHTML = htmlOpciones;
@@ -789,6 +733,81 @@ function cerrarModalOpciones() {
     if (modal) modal.remove();
 }
 
+/**
+ * Devuelve los próximos 4 horarios (en minutos desde la medianoche) que pasan
+ * por una parada a partir de un minuto absoluto del día.
+ *
+ * Si quedan menos de 4 horarios en el día, completa la lista con los primeros
+ * de la próxima jornada para no mostrarla corta.
+ */
+function obtenerProximos4HorariosDesde(lineaKey, paradaIdx, minBusqueda) {
+    try {
+        const horariosDelDia = calcularHorariosDelDiaParada(lineaKey, paradaIdx);
+        if (!horariosDelDia.length) return [];
+
+        const elegidos = horariosDelDia
+            .filter(h => h.minutos >= minBusqueda)
+            .slice(0, 4);
+
+        if (elegidos.length < 4) {
+            elegidos.push(...horariosDelDia.slice(0, 4 - elegidos.length));
+        }
+
+        return elegidos.map(h => h.minutos);
+    } catch (e) {
+        console.error('Error al calcular horarios extendidos:', e);
+        return [];
+    }
+}
+
+/**
+ * Igual que obtenerProximos4HorariosDesde(), pero los minutos se cuentan
+ * desde ahora (por ejemplo, lo que tarda caminar hasta la parada).
+ */
+function obtenerProximos4HorariosMinutos(lineaKey, paradaIdx, minutosAdicionales = 0) {
+    return obtenerProximos4HorariosDesde(
+        lineaKey,
+        paradaIdx,
+        minutosDeAhora() + Math.round(minutosAdicionales)
+    );
+}
+
+/**
+ * Devuelve el primer horario que pasa por la parada a partir de un minuto
+ * absoluto. Si ya no quedan viajes hoy, devuelve el primero de la próxima
+ * jornada (para no dejar el tramo sin horario).
+ */
+function obtenerSiguienteHorarioMinutos(lineaKey, paradaIdx, minuto) {
+    try {
+        const horariosDelDia = calcularHorariosDelDiaParada(lineaKey, paradaIdx);
+        if (!horariosDelDia.length) return null;
+
+        const siguiente = horariosDelDia.find(h => h.minutos >= minuto);
+        return siguiente ? siguiente.minutos : horariosDelDia[0].minutos;
+    } catch (e) {
+        console.error('Error al buscar el siguiente horario:', e);
+        return null;
+    }
+}
+
+/** Arma el cartel azul con una lista de horarios en minutos. */
+function formatearHorariosHTML(minutos, texto = 'Pasa por esta parada a las') {
+    if (!minutos || !minutos.length) return '';
+
+    const horas = minutos.map(minuto => convertirMinutosAHora(minuto));
+    return `<div style="margin-top: 8px; font-size: 0.85rem; color: #0369a1; background: #e0f2fe; padding: 6px 10px; border-radius: 6px; display: block; width: fit-content; max-width: 100%; border: 1px solid #bae6fd;">
+                🚍 ${texto} <b>${horas.join(' • ')}</b>
+            </div>`;
+}
+
+/** Busca los próximos 4 horarios para una parada y los devuelve como HTML. */
+function obtenerProximos4HorariosHTML(lineaKey, paradaIdx, minutosAdicionales = 0, texto = 'Pasa por esta parada a las') {
+    return formatearHorariosHTML(
+        obtenerProximos4HorariosMinutos(lineaKey, paradaIdx, minutosAdicionales),
+        texto
+    );
+}
+
 /** Ejecuta los cambios en el mapa y la interfaz según la opción elegida por el usuario */
 function seleccionarOpcionViaje(index) {
     cerrarModalOpciones();
@@ -797,70 +816,165 @@ function seleccionarOpcionViaje(index) {
     if (!viaje) return;
 
     limpiarMapa();
-    
     const btnVolver = `<button onclick="mostrarListaDeOpciones()" style="margin-top: 15px; width: 100%; padding: 8px; border: 1px solid #94a3b8; background: #f1f5f9; border-radius: 6px; cursor: pointer; font-weight: bold; color: #334155;">🔄 Cambiar de línea / Ver otras opciones</button>`;
 
     if (viaje.tipo === 'directo') {
         document.getElementById('select-linea').value = viaje.lineaKey;
         alCambiarLinea(viaje.lineaKey);
-        setTimeout(() => {
-            document.getElementById('select-destino').value = viaje.destino.idx;
-            sugerenciaTemporal = { idxDestino: viaje.destino.idx, cercana: { parada: viaje.origen.parada, index: viaje.origen.idx, distanciaKm: viaje.origen.dist } };
-            
-            // Dispara el cálculo base y la pantalla de carga (dura 450ms)
-            procesarRespuestaSugerencia(true);
-            
-            // 🔥 Esperamos 500ms para que inyecte el botón DESPUÉS de que termine de cargar
-            setTimeout(() => {
-                document.getElementById('resumen-viaje').innerHTML = `
-                    <div class="paso-itinerario"><p>🚌 Tomá la <b>${viaje.nombreLinea}</b> en <b>${viaje.origen.parada.nombre}</b>.</p></div>
-                    <div class="paso-itinerario"><p>📍 Bajate en <b>${viaje.destino.parada.nombre}</b> (a ${viaje.metrosDestino}m de tu destino).</p></div>
-                    <div style="font-weight: bold; color: #0f172a; margin-top: 10px;">⏱️ Tiempo total: ~${viaje.tiempoEstimado} min.</div>
-                    ${btnVolver}
-                `;
-                marcadorDestinoBuscado = L.marker([infoDestinoActual.lat, infoDestinoActual.lng]).addTo(mapa)
-                    .bindPopup(`📍 <b>Destino:</b> ${infoDestinoActual.nombre}<br>Caminás ${viaje.metrosDestino}m al bajar.`).openPopup();
-                mapa.setView([infoDestinoActual.lat, infoDestinoActual.lng], 15);
-            }, 500); 
+        document.getElementById('select-destino').value = viaje.destino.idx;
+        
+        // Evitamos llamar a procesarRespuestaSugerencia para que no sobrescriba nuestro HTML
+        recorridoActual.origenIndex = viaje.origen.idx;
+        recorridoActual.origenParada = viaje.origen.parada;
+        trazarRutaAPie(ubicacionUsuario, [viaje.origen.parada.lat, viaje.origen.parada.lng]);
 
-        }, 150);
+        const minCaminata = (viaje.origen.dist || 0) * 12;
+        const paradasViaje = Math.abs(viaje.destino.idx - viaje.origen.idx);
+
+        // Los horarios de llegada salen de los mismos 4 colectivos que se
+        // toman en el origen, sumándoles el tiempo de viaje. Así el itinerario
+        // muestra combinaciones coherentes y no estimaciones sueltas.
+        const minutosOrigen = obtenerProximos4HorariosMinutos(
+            viaje.lineaKey, viaje.origen.idx, minCaminata
+        );
+        const minutosDestino = minutosOrigen.map(
+            minuto => Math.round(minuto + (paradasViaje * 1.5))
+        );
+
+        const horariosOrigenHtml = formatearHorariosHTML(
+            minutosOrigen,
+            `En <b>${viaje.origen.parada.nombre}</b> pasa a las`
+        );
+        const horariosDestinoHtml = formatearHorariosHTML(
+            minutosDestino,
+            `Llega a <b>${viaje.destino.parada.nombre}</b> a las`
+        );
+
+        document.getElementById('resumen-viaje').innerHTML = `
+            <div class="paso-itinerario">
+                <p>🚌 Tomá la <b>${viaje.nombreLinea}</b> en <b>${viaje.origen.parada.nombre}</b>.</p>
+                ${horariosOrigenHtml}
+            </div>
+            <div class="paso-itinerario">
+                <p>📍 Bajate en <b>${viaje.destino.parada.nombre}</b> (a ${viaje.metrosDestino}m de tu destino).</p>
+                ${horariosDestinoHtml}
+            </div>
+            <div style="font-weight: bold; color: #0f172a; margin-top: 10px;">⏱️ Tiempo total: ~${viaje.tiempoEstimado} min.</div>
+            ${btnVolver}
+        `;
+        
+        marcadorDestinoBuscado = L.marker([infoDestinoActual.lat, infoDestinoActual.lng]).addTo(mapa)
+            .bindPopup(`📍 <b>Destino:</b> ${infoDestinoActual.nombre}<br>Caminás ${viaje.metrosDestino}m al bajar.`).openPopup();
+        mapa.setView([infoDestinoActual.lat, infoDestinoActual.lng], 15);
+        
     } else {
         document.getElementById('select-linea').value = viaje.L1.key;
         alCambiarLinea(viaje.L1.key);
-        setTimeout(() => {
-            document.getElementById('select-destino').value = viaje.L1.bajada.idx;
-            sugerenciaTemporal = { idxDestino: viaje.L1.bajada.idx, cercana: { parada: viaje.L1.origen.parada, index: viaje.L1.origen.idx, distanciaKm: 0 } };
-            
-            // Dispara el cálculo base y la pantalla de carga (dura 450ms)
-            procesarRespuestaSugerencia(true);
+        document.getElementById('select-destino').value = viaje.L1.bajada.idx;
+        
+        recorridoActual.origenIndex = viaje.L1.origen.idx;
+        recorridoActual.origenParada = viaje.L1.origen.parada;
+        trazarRutaAPie(ubicacionUsuario, [viaje.L1.origen.parada.lat, viaje.L1.origen.parada.lng]);
 
-            // 🔥 Esperamos 500ms para que inyecte el botón DESPUÉS de que termine de cargar
-            setTimeout(() => {
-                document.getElementById('resumen-viaje').innerHTML = `
-                    <div class="paso-itinerario"><p>🚌 <b>Tramo 1:</b> Tomá la <b>${viaje.L1.nombre}</b> en <b>${viaje.L1.origen.parada.nombre}</b> y bajate en <b>${viaje.L1.bajada.parada.nombre}</b>.</p></div>
-                    <div class="paso-itinerario" style="background: #fff7ed; padding: 10px; border-left: 4px solid #f97316;">
-                        <p>🔄 <b>Escala:</b> Caminá ${viaje.distEscala}m hacia <b>${viaje.L2.subida.parada.nombre}</b> y tomá la <b>${viaje.L2.nombre}</b>.</p>
-                    </div>
-                    <div class="paso-itinerario"><p>📍 <b>Tramo 2:</b> Bajate en <b>${viaje.L2.destino.parada.nombre}</b> (a ${viaje.metrosDestino}m de tu destino final).</p></div>
-                    <div style="font-weight: bold; color: #0f172a; margin-top: 10px;">⏱️ Tiempo total: ~${viaje.tiempoEstimado} min.</div>
-                    ${btnVolver}
-                `;
-                dibujarTramoEscalaL2(viaje, infoDestinoActual.lat, infoDestinoActual.lng, infoDestinoActual.nombre);
-            }, 500);
-        }, 200);
+        const distCamina1 = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [viaje.L1.origen.parada.lat, viaje.L1.origen.parada.lng]);
+        const minCaminata1 = distCamina1 * 12;
+
+        const paradasL1 = Math.abs(viaje.L1.bajada.idx - viaje.L1.origen.idx);
+        const paradasL2 = Math.abs(viaje.L2.destino.idx - viaje.L2.subida.idx);
+
+        // Los 4 colectivos que se toman en el origen de la L1 generan también
+        // las llegadas a la bajada. Después de caminar la escala, cada llegada
+        // se engancha con el primer colectivo disponible de la L2, y su llegada
+        // al destino final se calcula con el tiempo de viaje de la L2.
+        const minutosL1 = obtenerProximos4HorariosMinutos(
+            viaje.L1.key, viaje.L1.origen.idx, minCaminata1
+        );
+        const minutosL1Bajada = minutosL1.map(
+            minuto => Math.round(minuto + (paradasL1 * 1.5))
+        );
+
+        const minEscalaCaminando = viaje.distEscala * 0.012;
+        const llegadasL1 = minutosL1Bajada.length
+            ? minutosL1Bajada
+            : [minutosDeAhora() + minCaminata1 + (paradasL1 * 1.5)];
+
+        // Para cada llegada de la L1, buscamos el primer colectivo de la L2
+        // que realmente se puede tomar después de caminar la escala. Así las
+        // cuatro combinaciones del itinerario son coherentes entre sí.
+        const minutosL2 = [];
+        for (const llegadaL1 of llegadasL1) {
+            const llegadaAEscala = Math.round(llegadaL1 + minEscalaCaminando);
+            const siguienteL2 = obtenerSiguienteHorarioMinutos(
+                viaje.L2.key, viaje.L2.subida.idx, llegadaAEscala
+            );
+            if (siguienteL2 !== null && !minutosL2.includes(siguienteL2)) {
+                minutosL2.push(siguienteL2);
+            }
+        }
+
+        // Si la L2 pasa más seguido que la L1, puede haber menos de 4 viajes
+        // distintos. Completamos con los siguientes después de la última llegada.
+        if (minutosL2.length < 4) {
+            const ultimaLlegada = Math.round(
+                llegadasL1[llegadasL1.length - 1] + minEscalaCaminando
+            );
+            const siguientesL2 = obtenerProximos4HorariosDesde(
+                viaje.L2.key, viaje.L2.subida.idx, ultimaLlegada
+            );
+            for (const minuto of siguientesL2) {
+                if (!minutosL2.includes(minuto)) minutosL2.push(minuto);
+                if (minutosL2.length === 4) break;
+            }
+        }
+
+        const minutosL2Destino = minutosL2.map(
+            minuto => Math.round(minuto + (paradasL2 * 1.5))
+        );
+
+        const horariosL1Html = formatearHorariosHTML(
+            minutosL1,
+            `En <b>${viaje.L1.origen.parada.nombre}</b> pasa a las`
+        );
+        const horariosL1BajadaHtml = formatearHorariosHTML(
+            minutosL1Bajada,
+            `Llega a <b>${viaje.L1.bajada.parada.nombre}</b> a las`
+        );
+        const horariosL2Html = formatearHorariosHTML(
+            minutosL2,
+            `En la parada de escala <b>${viaje.L2.subida.parada.nombre}</b> pasa a las`
+        );
+        const horariosL2DestinoHtml = formatearHorariosHTML(
+            minutosL2Destino,
+            `Llega a <b>${viaje.L2.destino.parada.nombre}</b> a las`
+        );
+
+        document.getElementById('resumen-viaje').innerHTML = `
+            <div class="paso-itinerario">
+                <p>🚌 <b>Tramo 1:</b> Tomá la <b>${viaje.L1.nombre}</b> en <b>${viaje.L1.origen.parada.nombre}</b> y bajate en <b>${viaje.L1.bajada.parada.nombre}</b>.</p>
+                ${horariosL1Html}
+                ${horariosL1BajadaHtml}
+            </div>
+            <div class="paso-itinerario" style="background: #fff7ed; padding: 10px; border-left: 4px solid #f97316;">
+                <p>🔄 <b>Escala:</b> Caminá ${viaje.distEscala}m hacia <b>${viaje.L2.subida.parada.nombre}</b> y tomá la <b>${viaje.L2.nombre}</b>.</p>
+                ${horariosL2Html}
+            </div>
+            <div class="paso-itinerario">
+                <p>📍 <b>Tramo 2:</b> Bajate en <b>${viaje.L2.destino.parada.nombre}</b> (a ${viaje.metrosDestino}m de tu destino final).</p>
+                ${horariosL2DestinoHtml}
+            </div>
+            <div style="font-weight: bold; color: #0f172a; margin-top: 10px;">⏱️ Tiempo total: ~${viaje.tiempoEstimado} min.</div>
+            ${btnVolver}
+        `;
+        dibujarTramoEscalaL2(viaje, infoDestinoActual.lat, infoDestinoActual.lng, infoDestinoActual.nombre);
     }
 }
-/**
- * Dibuja en el mapa el tramo de la segunda línea (la del transbordo).
- */
+
+/** Dibuja en el mapa el tramo de la segunda línea (la del transbordo). */
 function dibujarTramoEscalaL2(mejorViaje, latDestino, lngDestino, nombreLugar) {
     const datosL2 = datosLineasCargados[mejorViaje.L2.key];
     const recorridoL2 = datosL2.recorrido;
 
-    // 1. Recorrido completo de L2.
     lineaL2FondoPolyline = L.polyline(recorridoL2, { color: '#ef4444', weight: 5, opacity: 0.5 }).addTo(mapa);
-
-    // 2. Todas las paradas de L2, ordenadas según el recorrido.
     const minutosAhoraL2 = minutosDeAhora();
 
     const paradasConIndiceL2 = datosL2.paradas.map((parada, index) => ({
@@ -893,7 +1007,6 @@ function dibujarTramoEscalaL2(mejorViaje, latDestino, lngDestino, nombreLugar) {
         marcadoresParadas.push(marker);
     });
 
-    // 3. Tramo exacto que se va a viajar en L2 (Usamos el destino exacto que calculó el algoritmo, sin recalcular)
     const paradaSubidaL2 = mejorViaje.L2.subida.parada;
     const paradaDestinoFinalL2 = mejorViaje.L2.destino.parada;
 
@@ -912,15 +1025,8 @@ function dibujarTramoEscalaL2(mejorViaje, latDestino, lngDestino, nombreLugar) {
         tramoCoordsL2.push(proyDestinoL2.puntoProyectado);
     }
 
-    lineaTramoL2Polyline = L.polyline(tramoCoordsL2, {
-        color: '#ea580c',
-        weight: 7,
-        opacity: 1,
-        lineCap: 'round',
-        lineJoin: 'round'
-    }).addTo(mapa);
+    lineaTramoL2Polyline = L.polyline(tramoCoordsL2, { color: '#ea580c', weight: 7, opacity: 1, lineCap: 'round', lineJoin: 'round' }).addTo(mapa);
 
-    // 4. Marcadores de subida y bajada del transbordo (Con coordenadas exactas)
     marcadorTransbordoL2 = L.marker([paradaSubidaL2.lat, paradaSubidaL2.lng], {
         icon: L.divIcon({
             className: 'custom-div-icon',
@@ -935,7 +1041,6 @@ function dibujarTramoEscalaL2(mejorViaje, latDestino, lngDestino, nombreLugar) {
         .bindPopup(`📍 <b>Bajada:</b> ${paradaDestinoFinalL2.nombre}<br>🚶 Caminás ${mejorViaje.metrosDestino}m hasta ${nombreLugar}`)
         .openPopup();
 
-    // 5. Ajustar la cámara para que se vea todo.
     if (lineaTramoPolyline) {
         const bounds = lineaTramoPolyline.getBounds();
         bounds.extend(lineaTramoL2Polyline.getBounds());

@@ -160,10 +160,34 @@ function calcularRutaYTiempo() {
     const minEspera = horarioOrigen ? Math.max(0, horarioOrigen.minutosLlegada - minutosAhora) : 0;
     const tiempoTotal = minCamina + minEspera + minColectivo;
 
+    // Próximos 4 horarios en la subida y llegadas de esos mismos colectivos
+    // a la bajada (así las horas del itinerario son coherentes entre sí).
+    const minutosOrigen = typeof obtenerProximos4HorariosMinutos === 'function'
+        ? obtenerProximos4HorariosMinutos(
+            recorridoActual.key, recorridoActual.origenIndex, minCamina
+        )
+        : [];
+    const minutosDestino = minutosOrigen.map(
+        minuto => Math.round(minuto + minColectivo)
+    );
+
+    const horariosOrigenHtml = typeof formatearHorariosHTML === 'function'
+        ? formatearHorariosHTML(
+            minutosOrigen,
+            'En <b>' + origenParada.nombre + '</b> pasa a las'
+        )
+        : '';
+    const horariosDestinoHtml = typeof formatearHorariosHTML === 'function'
+        ? formatearHorariosHTML(
+            minutosDestino,
+            'Llega a <b>' + destinoParada.nombre + '</b> a las'
+        )
+        : '';
+
     document.getElementById('resumen-viaje').innerHTML =
         '<div class="paso-itinerario"><p>1. A pie: Camina ~' + minCamina + ' min hacia <b>' + origenParada.nombre + '.</b></p></div>' +
-        '<div class="paso-itinerario"><p>2. Colectivo: ~' + minColectivo + ' min.</p></div>' +
-        '<div class="paso-itinerario"><p>3. Destino: Bajate en <b>' + destinoParada.nombre + '.</b></p></div>' +
+        '<div class="paso-itinerario"><p>2. Colectivo: ~' + minColectivo + ' min.</p>' + horariosOrigenHtml + '</div>' +
+        '<div class="paso-itinerario"><p>3. Destino: Bajate en <b>' + destinoParada.nombre + '.</b></p>' + horariosDestinoHtml + '</div>' +
         '<p>Tiempo total estimado: ~' + tiempoTotal + ' min.</p>';
 }
 
