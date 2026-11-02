@@ -304,7 +304,7 @@ function mostrarCargandoViaje(texto = 'Buscando el mejor viaje...') {
 
     const overlay = document.createElement('div');
     overlay.id = 'modal-cargando-viaje';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); z-index: 100000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px); font-family: sans-serif;';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh; background: rgba(15, 23, 42, 0.75); z-index: 100000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px); font-family: sans-serif;';
 
     const box = document.createElement('div');
     box.style.cssText = 'background: white; width: 90%; max-width: 330px; padding: 30px 25px; border-radius: 18px; text-align: center; box-shadow: 0 18px 45px rgba(0,0,0,0.35); display: flex; flex-direction: column; align-items: center; gap: 14px;';
@@ -697,7 +697,7 @@ function mostrarListaDeOpciones() {
 
     const overlay = document.createElement('div');
     overlay.id = 'modal-opciones-viaje';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); z-index: 99999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px);';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh; background: rgba(0, 0, 0, 0.6); z-index: 99999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px);';
     
     const modalContent = document.createElement('div');
     modalContent.style.cssText = 'background: white; width: 90%; max-width: 380px; max-height: 85vh; overflow-y: auto; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-family: sans-serif;';

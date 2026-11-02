@@ -1510,23 +1510,9 @@ position: fixed;
 }
 
 @keyframes mover-colectivo {
-  0% { 
-    transform: translateX(0px) !important;
-    opacity: 0 !important;
-  }
-  10% {
-    opacity: 1 !important;
-  }
-  85% {
-    transform: translateX(115px) !important;
-    opacity: 1 !important;
-  }
-  95% {
-    transform: translateX(115px) !important;
-    opacity: 0 !important;
-  }
-  100% { 
-    transform: translateX(115px) !important;
-    opacity: 0 !important; 
-  }
+    0% { transform: translateX(-65px); opacity: 0; }
+    15% { opacity: 1; transform: translateX(-40px); }
+    50% { transform: translateX(0px); }
+    85% { opacity: 1; transform: translateX(40px); }
+    100% { transform: translateX(65px); opacity: 0; }
 }
