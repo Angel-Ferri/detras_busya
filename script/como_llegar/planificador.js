@@ -325,6 +325,36 @@ function mostrarCargandoViaje(texto = 'Buscando el mejor viaje...') {
                 0%, 100% { opacity: 0.7; }
                 50% { opacity: 1; }
             }
+            /* Barra de carga: se prefiere en resoluciones chicas (celulares) */
+            .colectivo-loadingbar {
+                display: none;
+                width: 100%;
+                height: 8px;
+                background: #e2e8f0;
+                border-radius: 999px;
+                overflow: hidden;
+                margin-bottom: 6px;
+                box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.12);
+            }
+            .colectivo-loadingbar .barra-progreso {
+                display: block;
+                height: 100%;
+                width: 45%;
+                border-radius: 999px;
+                background: linear-gradient(90deg, #60a5fa, #2563eb);
+                box-shadow: 0 0 8px rgba(37, 99, 235, 0.45);
+                animation: mover-barra 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            }
+            @keyframes mover-barra {
+                0% { transform: translateX(-110%); }
+                100% { transform: translateX(240%); }
+            }
+            @media (max-width: 600px) {
+                .colectivo-carga-bus { display: none !important; }
+                .colectivo-loadingbar { display: block; }
+                /* En móvil no se ve la escena del bus: solo la barra de carga */
+                #modal-cargando-viaje .animacion-cena { display: none !important; }
+            }
             .punto-parada {
                 position: absolute;
                 top: 50%;
@@ -352,8 +382,12 @@ function mostrarCargandoViaje(texto = 'Buscando el mejor viaje...') {
 
     // 🔥 NUEVA ESTRUCTURA HTML: Calle, 3 paradas y el colectivo moviéndose horizontalmente
 box.innerHTML = `
+    <!-- Barra de carga: se usa en resoluciones chicas (celulares), ver media query -->
+    <div class="colectivo-loadingbar">
+        <div class="barra-progreso"></div>
+    </div>
     <!-- Contenedor principal de la animación (centrado y con overflow para no romper la pantalla) -->
-    <div style="position: relative; width: 150px; height: 60px; margin: 0 auto 5px auto; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+    <div class="animacion-cena" style="position: relative; width: 150px; height: 60px; margin: 0 auto 5px auto; display: flex; align-items: center; justify-content: center; overflow: hidden;">
         
         <!-- Línea de la calle -->
         <div style="position: absolute; width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px;"></div>
@@ -365,7 +399,7 @@ box.innerHTML = `
         
         <!-- Colectivo animado (Le agregamos left: 5% para que arranque desde afuera o borde) -->
        <!-- Colectivo animado -->
-<div style="position: absolute; top: 50%; left: 0; margin-top: -22px; animation: mover-colectivo 2.5s ease-in-out infinite; z-index: 9999; will-change: transform;">
+<div class="colectivo-carga-bus" style="position: absolute; top: 50%; left: 0; margin-top: -22px; animation: mover-colectivo 2.5s ease-in-out infinite; z-index: 9999; will-change: transform;">
     <img src="estilos/img/bus_animacion.png" style="width: 32px; height: auto;">
 </div>
     </div>
