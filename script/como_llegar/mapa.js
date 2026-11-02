@@ -192,6 +192,40 @@ function calcularRutaYTiempo() {
 }
 
 /**
+ * Dibuja el tramo que se recorre en colectivo sobre el recorrido de una línea.
+ * Recorta la polilínea entre las proyecciones de la parada de subida y la de
+ * bajada. Sirve tanto para viajes directos como para el primer tramo de un
+ * transbordo. Devuelve la polilínea creada (para guardarla en el estado).
+ */
+function dibujarTramoColectivo(recorrido, origenParada, destinoParada, estilos = {}) {
+    const proyOrigen = obtenerProyeccionEnRecorrido(recorrido, [origenParada.lat, origenParada.lng]);
+    const proyDestino = obtenerProyeccionEnRecorrido(recorrido, [destinoParada.lat, destinoParada.lng]);
+
+    const tramoCoords = [proyOrigen.puntoProyectado];
+    if (proyOrigen.indiceSegmento <= proyDestino.indiceSegmento) {
+        for (let i = proyOrigen.indiceSegmento + 1; i <= proyDestino.indiceSegmento; i++) {
+            tramoCoords.push(recorrido[i]);
+        }
+    } else {
+        for (let i = proyOrigen.indiceSegmento + 1; i < recorrido.length; i++) {
+            tramoCoords.push(recorrido[i]);
+        }
+        for (let i = 0; i <= proyDestino.indiceSegmento; i++) {
+            tramoCoords.push(recorrido[i]);
+        }
+    }
+    tramoCoords.push(proyDestino.puntoProyectado);
+
+    return L.polyline(tramoCoords, Object.assign({
+        color: '#f97316',
+        weight: 6,
+        opacity: 0.9,
+        lineCap: 'round',
+        lineJoin: 'round'
+    }, estilos)).addTo(mapa);
+}
+
+/**
  * Traza la ruta a pie con el servidor público de OSRM (perfil peatonal).
  */
 

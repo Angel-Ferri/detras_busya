@@ -863,7 +863,29 @@ function seleccionarOpcionViaje(index) {
         // Evitamos llamar a procesarRespuestaSugerencia para que no sobrescriba nuestro HTML
         recorridoActual.origenIndex = viaje.origen.idx;
         recorridoActual.origenParada = viaje.origen.parada;
+        recorridoActual.distanciaAPieKm = viaje.origen.dist || calcularDistancia(
+            [ubicacionUsuario.lat, ubicacionUsuario.lng],
+            [viaje.origen.parada.lat, viaje.origen.parada.lng]
+        );
         trazarRutaAPie(ubicacionUsuario, [viaje.origen.parada.lat, viaje.origen.parada.lng]);
+
+        // Dibujamos el tramo que realmente se recorre en colectivo (subida → bajada).
+        // Antes solo se dibujaba la línea completa, por eso esta opción parecía
+        // no tener recorrido propio.
+        lineaTramoPolyline = dibujarTramoColectivo(
+            recorridoActual.recorrido,
+            viaje.origen.parada,
+            viaje.destino.parada,
+            { color: '#f97316', weight: 6, opacity: 0.9 }
+        );
+        marcadorOrigenSugerido = L.marker(
+            [viaje.origen.parada.lat, viaje.origen.parada.lng],
+            { icon: iconoParadaSubida }
+        ).addTo(mapa).bindPopup('Subida');
+        marcadorDestinoSeleccionado = L.marker(
+            [viaje.destino.parada.lat, viaje.destino.parada.lng],
+            { icon: iconoParadaBajada }
+        ).addTo(mapa).bindPopup('Bajada');
 
         const minCaminata = (viaje.origen.dist || 0) * 12;
         const paradasViaje = Math.abs(viaje.destino.idx - viaje.origen.idx);
@@ -901,8 +923,15 @@ function seleccionarOpcionViaje(index) {
         `;
         
         marcadorDestinoBuscado = L.marker([infoDestinoActual.lat, infoDestinoActual.lng]).addTo(mapa)
-            .bindPopup(`📍 <b>Destino:</b> ${infoDestinoActual.nombre}<br>Caminás ${viaje.metrosDestino}m al bajar.`).openPopup();
-        mapa.setView([infoDestinoActual.lat, infoDestinoActual.lng], 15);
+            .bindPopup(`📍 <b>Destino:</b> ${infoDestinoActual.nombre}<br>Caminás ${viaje.metrosDestino}m al bajar.`, { autoPan: false })
+            .openPopup();
+
+        // Encuadramos el viaje completo (caminata + tramo de colectivo + destino)
+        // en lugar de saltar solo al destino: así se ve todo el dibujo.
+        const limitesViaje = lineaTramoPolyline.getBounds()
+            .extend([ubicacionUsuario.lat, ubicacionUsuario.lng])
+            .extend([infoDestinoActual.lat, infoDestinoActual.lng]);
+        mapa.fitBounds(limitesViaje, { padding: [50, 50], animate: false });
         
     } else {
         document.getElementById('select-linea').value = viaje.L1.key;
@@ -1002,6 +1031,19 @@ function seleccionarOpcionViaje(index) {
             <div style="font-weight: bold; color: #0f172a; margin-top: 10px;">⏱️ Tiempo total: ~${viaje.tiempoEstimado} min.</div>
             ${btnVolver}
         `;
+        // Tramo de la primera línea (subida → bajada). Lo dibujamos antes del
+        // segundo tramo para que el encuadre final incluya los dos recorridos.
+        lineaTramoPolyline = dibujarTramoColectivo(
+            datosLineasCargados[viaje.L1.key].recorrido,
+            viaje.L1.origen.parada,
+            viaje.L1.bajada.parada,
+            { color: '#f97316', weight: 6, opacity: 0.9 }
+        );
+        marcadorOrigenSugerido = L.marker(
+            [viaje.L1.origen.parada.lat, viaje.L1.origen.parada.lng],
+            { icon: iconoParadaSubida }
+        ).addTo(mapa).bindPopup('Subida');
+
         dibujarTramoEscalaL2(viaje, infoDestinoActual.lat, infoDestinoActual.lng, infoDestinoActual.nombre);
     }
 }
@@ -1078,11 +1120,10 @@ function dibujarTramoEscalaL2(mejorViaje, latDestino, lngDestino, nombreLugar) {
         .bindPopup(`📍 <b>Bajada:</b> ${paradaDestinoFinalL2.nombre}<br>🚶 Caminás ${mejorViaje.metrosDestino}m hasta ${nombreLugar}`)
         .openPopup();
 
-    if (lineaTramoPolyline) {
-        const bounds = lineaTramoPolyline.getBounds();
-        bounds.extend(lineaTramoL2Polyline.getBounds());
-        mapa.fitBounds(bounds, { padding: [40, 40] });
-    } else {
-        mapa.fitBounds(lineaTramoL2Polyline.getBounds(), { padding: [40, 40] });
-    }
+    // Encuadramos los dos tramos y el punto de partida del usuario para que se
+    // vea el viaje completo y no solo la segunda línea.
+    const limites = lineaTramoL2Polyline.getBounds();
+    if (lineaTramoPolyline) limites.extend(lineaTramoPolyline.getBounds());
+    if (ubicacionUsuario) limites.extend([ubicacionUsuario.lat, ubicacionUsuario.lng]);
+    mapa.fitBounds(limites, { padding: [40, 40], animate: false });
 }
