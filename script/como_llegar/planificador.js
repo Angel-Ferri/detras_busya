@@ -351,26 +351,29 @@ function mostrarCargandoViaje(texto = 'Buscando el mejor viaje...') {
     ];
 
     // 🔥 NUEVA ESTRUCTURA HTML: Calle, 3 paradas y el colectivo moviéndose horizontalmente
-    box.innerHTML = `
-        <div style="position: relative; width: 150px; height: 60px; margin-bottom: 5px; display: flex; align-items: center; justify-content: center;">
-            <!-- Línea de la calle -->
-            <div style="position: absolute; width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px;"></div>
-            
-            <!-- Paradas -->
-            <div class="punto-parada" style="left: 10%;"></div>
-            <div class="punto-parada" style="left: 50%; background: #2563eb; box-shadow: 0 0 0 2px #bfdbfe; transform: translate(-50%, -50%);"></div>
-            <div class="punto-parada" style="right: 10%;"></div>
-            
-            <!-- Colectivo animado -->
-            <div style="position: absolute; top: 50%; margin-top: -22px; animation: mover-colectivo 2.5s ease-in-out infinite; z-index: 2;">
-            <img src="estilos/img/bus_animacion.png" style="width: 32px; height: auto;">
-            </div>
-        </div>
+box.innerHTML = `
+    <!-- Contenedor principal de la animación (centrado y con overflow para no romper la pantalla) -->
+    <div style="position: relative; width: 150px; height: 60px; margin: 0 auto 5px auto; display: flex; align-items: center; justify-content: center; overflow: hidden;">
         
-        <div style="font-weight: bold; color: #1e293b; font-size: 1rem;">${texto}</div>
-        <div id="consejo-carga-nuevo" style="font-size: 0.9rem; color: #475569; min-height: 42px; display: flex; align-items: center; justify-content: center; line-height: 1.4; animation: pulsar-consejo-nuevo 2s ease-in-out infinite; padding: 0 6px;"></div>
-        <div style="font-size: 0.75rem; color: #94a3b8; margin-top: -4px;">Un toque más... ya te muestro las opciones</div>
-    `;
+        <!-- Línea de la calle -->
+        <div style="position: absolute; width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px;"></div>
+        
+        <!-- Paradas (Puntos) -->
+        <div class="punto-parada" style="position: absolute; left: 10%; transform: translateY(-50%); top: 50%;"></div>
+        <div class="punto-parada" style="position: absolute; left: 50%; top: 50%; background: #2563eb; box-shadow: 0 0 0 2px #bfdbfe; transform: translate(-50%, -50%);"></div>
+        <div class="punto-parada" style="position: absolute; right: 10%; transform: translateY(-50%); top: 50%;"></div>
+        
+        <!-- Colectivo animado (Le agregamos left: 5% para que arranque desde afuera o borde) -->
+       <!-- Colectivo animado -->
+<div style="position: absolute; top: 50%; left: 0; margin-top: -22px; animation: mover-colectivo 2.5s ease-in-out infinite; z-index: 9999; will-change: transform;">
+    <img src="estilos/img/bus_animacion.png" style="width: 32px; height: auto;">
+</div>
+    </div>
+    
+    <div style="font-weight: bold; color: #1e293b; font-size: 1rem; text-align: center;">${texto}</div>
+    <div id="consejo-carga-nuevo" style="font-size: 0.9rem; color: #475569; min-height: 42px; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.4; animation: pulsar-consejo-nuevo 2s ease-in-out infinite; padding: 0 6px;"></div>
+    <div style="font-size: 0.75rem; color: #94a3b8; margin-top: -4px; text-align: center;">Un toque más... ya te muestro las opciones</div>
+`;
 
     overlay.appendChild(box);
     document.body.appendChild(overlay);

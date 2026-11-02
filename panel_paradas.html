@@ -31,7 +31,17 @@
         </div>
     </header>
 
-    <main class="pp-layout">
+    <!-- Pestañas del panel: Editar paradas ↔ Estadísticas -->
+    <nav class="pp-view-tabs" role="tablist" aria-label="Secciones del panel">
+        <button id="pp-tab-editor" class="pp-view-tab is-active" type="button" role="tab" aria-selected="true" data-vista="editor">
+            🛠️ Editar paradas
+        </button>
+        <button id="pp-tab-analisis" class="pp-view-tab" type="button" role="tab" aria-selected="false" data-vista="estadisticas">
+            📊 Estadísticas
+        </button>
+    </nav>
+
+    <main class="pp-layout" id="pp-layout">
         <aside class="pp-sidebar">
             <div class="pp-sidebar-head">
                 <h1>Paradas</h1>
@@ -132,9 +142,40 @@
         </aside>
     </main>
 
+    <!-- Apartado: Análisis (procesamiento de Google Analytics) -->
+    <section id="pp-panel-analisis" class="pp-analisis hidden" aria-label="Análisis de Google Analytics">
+        <header class="pp-analisis-head">
+            <h2>📊 Análisis</h2>
+            <p class="pp-analisis-sub">Métricas de uso procesadas desde Google Analytics (gtag · ID G-4HNJ40EJJG).</p>
+        </header>
+
+        <div class="pp-analisis-rango" role="tablist" aria-label="Rango de análisis">
+            <button type="button" class="pp-rango-tab is-active" data-rango="dia" role="tab" aria-selected="true">Día</button>
+            <button type="button" class="pp-rango-tab" data-rango="semana" role="tab" aria-selected="false">Semana</button>
+            <button type="button" class="pp-rango-tab" data-rango="mes" role="tab" aria-selected="false">Mes</button>
+            <button type="button" class="pp-rango-tab" data-rango="ano" role="tab" aria-selected="false">Año</button>
+        </div>
+
+        <div id="pp-analisis-loading" class="pp-analisis-loading hidden">Cargando métricas…</div>
+        <div id="pp-analisis-error" class="pp-analisis-error hidden"></div>
+
+        <div id="pp-analisis-resumen" class="pp-analisis-resumen">
+            <p class="pp-analisis-vacio">Esperando datos de Google Analytics…</p>
+        </div>
+
+        <div id="pp-analisis-barras" class="pp-analisis-barras">
+            <p class="pp-analisis-vacio">Sin datos de sesiones para el rango seleccionado.</p>
+        </div>
+
+        <div id="pp-analisis-eventos" class="pp-analisis-eventos">
+            <p class="pp-analisis-vacio">Sin eventos custom registrados todavía.</p>
+        </div>
+    </section>
+
     <div id="pp-toast" class="pp-toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script/analisis.js"></script>
     <script src="script/panel_paradas.js"></script>
 </body>
 </html>

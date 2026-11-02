@@ -28,6 +28,7 @@ const estado = {
     indiceSeleccionado: null,
     modo: 'idle', // idle | nueva | edicion
     busqueda: '',
+    vista: 'editor', // editor | estadisticas
     archivoVinculado: null,
     hayCambios: false,
     mapa: null,
@@ -63,7 +64,8 @@ function guardarReferencias() {
         'pp-map-hint', 'pp-editor-empty', 'pp-form', 'pp-form-kicker', 'pp-form-title',
         'pp-form-close', 'pp-name', 'pp-lat', 'pp-lng', 'pp-desc', 'pp-position',
         'pp-position-field', 'pp-position-help', 'pp-form-error', 'pp-apply',
-        'pp-cancel', 'pp-delete', 'pp-gps', 'pp-coord-note', 'pp-toast'
+        'pp-cancel', 'pp-delete', 'pp-gps', 'pp-coord-note', 'pp-toast',
+        'pp-tab-editor', 'pp-tab-analisis', 'pp-layout', 'pp-panel-analisis'
     ];
     for (const id of ids) el[id] = document.getElementById(id);
 }
@@ -90,6 +92,8 @@ function enlazarEventos() {
     el['pp-form-close'].addEventListener('click', () => cerrarEditor(true));
     el['pp-delete'].addEventListener('click', eliminarParadaSeleccionada);
     el['pp-gps'].addEventListener('click', usarUbicacionActual);
+    el['pp-tab-editor'].addEventListener('click', () => cambiarVista('editor'));
+    el['pp-tab-analisis'].addEventListener('click', () => cambiarVista('estadisticas'));
 
     el['pp-lat'].addEventListener('input', () => sincronizarMarcadorEdicion());
     el['pp-lng'].addEventListener('input', () => sincronizarMarcadorEdicion());
@@ -422,6 +426,27 @@ function actualizarBotonGuardar() {
 }
 
 // ============================================================
+// Navegación: Editar paradas ↔ Estadísticas
+// ============================================================
+
+function cambiarVista(nuevaVista) {
+    estado.vista = nuevaVista;
+    const enEditor = nuevaVista === 'editor';
+
+    el['pp-layout'].classList.toggle('hidden', !enEditor);
+    el['pp-panel-analisis'].classList.toggle('hidden', enEditor);
+
+    if (enEditor) {
+        renderizarTodo();
+        // Al ocultar el mapa con display:none, Leaflet pierde el tamaño;
+        // se recalcula al volver a la vista de edición.
+        if (estado.mapa) {
+            try { estado.mapa.invalidateSize(); } catch (error) { /* noop */ }
+        }
+    }
+}
+
+// ============================================================
 // Línea y selección
 // ============================================================
 
@@ -437,6 +462,10 @@ function cambiarLinea(clave) {
     cerrarFormulario(false);
     renderizarTodo();
     ajustarMapaALinea();
+
+    if (typeof trackEventGA === 'function') {
+        trackEventGA('editar_linea', { linea: clave });
+    }
 }
 
 function obtenerParadas() {

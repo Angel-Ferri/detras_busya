@@ -45,6 +45,9 @@ function cambiarLineaDeTrabajo() {
         return;
     }
 
+    // Evento custom de Google Analytics: el chofer cambió de línea
+    registrarEventoChofer('cambiar_linea', { linea: archivoActual });
+
     // Carga la planilla que rige hoy: semana, sábado o domingo
     cargarHorariosDeHoy(archivoActual)
         .then(data => {
@@ -66,6 +69,13 @@ function cambiarLineaDeTrabajo() {
             console.error(err);
             alert("No se pudieron obtener los datos de la línea.");
         });
+}
+
+// Registro de evento en Google Analytics (custom event del panel)
+function registrarEventoChofer(nombreEvento, parametros) {
+    if (typeof trackEventGA === 'function') {
+        trackEventGA(nombreEvento, parametros);
+    }
 }
 
 function modificarContadorChofer(valor) {
@@ -158,6 +168,12 @@ function calcularFrecuenciaDeParada(nombreParada) {
 // --- 📍 NUEVO: ACCIÓN DEL CHOFER EN TIEMPO REAL ---
 function registrarPasoRealActual() {
     if (!paradaSeleccionadaActual) return;
+
+    // Envío del evento a Google Analytics (paso real registrado)
+    registrarEventoChofer('marcar_paso', {
+        linea: archivoActual,
+        parada: paradaSeleccionadaActual
+    });
 
     // Obtener la hora real de la computadora/móvil en formato HH:MM
     const ahora = new Date();
