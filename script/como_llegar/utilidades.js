@@ -54,7 +54,23 @@ function proyectarPuntoEnSegmento(p, a, b) {
  * Devuelve el punto proyectado y el índice del segmento donde cayó.
  * Sirve para saber "en qué parte de la ruta" está una parada.
  */
+// Caché de proyecciones: evita recalcular la proyección de una misma parada
+// sobre el mismo recorrido en búsquedas sucesivas (optimización F).
+const _cacheProyeccion = new WeakMap();
 function obtenerProyeccionEnRecorrido(recorridoCoords, puntoParada) {
+    if (recorridoCoords && Array.isArray(recorridoCoords)) {
+        let inner = _cacheProyeccion.get(recorridoCoords);
+        if (!inner) { inner = new Map(); _cacheProyeccion.set(recorridoCoords, inner); }
+        const key = (puntoParada && puntoParada.length >= 2) ? (puntoParada[0] + ',' + puntoParada[1]) : String(puntoParada);
+        const cached = inner.get(key);
+        if (cached) return cached;
+        const result = _calcularProyeccion(recorridoCoords, puntoParada);
+        inner.set(key, result);
+        return result;
+    }
+    return _calcularProyeccion(recorridoCoords, puntoParada);
+}
+function _calcularProyeccion(recorridoCoords, puntoParada) {
     let menorDistancia = Infinity, mejorPunto = puntoParada, indiceSegmento = 0;
     for (let i = 0; i < recorridoCoords.length - 1; i++) {
         const proyectado = proyectarPuntoEnSegmento(puntoParada, recorridoCoords[i], recorridoCoords[i + 1]);

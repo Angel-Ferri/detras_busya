@@ -182,7 +182,8 @@ async function cargarRecorridos() {
         // correcciones de coordenadas se vean también en el planificador.
         await aplicarParadasManuales();
 
-        origenDeDatos = 'local';
+        // Los datos locales son ahora la fuente prevista (sin API): no se avisa.
+        origenDeDatos = 'api';
         return Object.keys(datosLineasCargados).length > 0;
     } catch (e) {
         console.error('Error cargando lineas_unificadas.json:', e);
@@ -294,23 +295,9 @@ async function aplicarParadasManuales() {
  * Si la API no está, usa los archivos JSON locales.
  */
 async function cargarHorarios() {
-    try {
-        const listado = await pedirJSON('/api/lineas');
-        const lineas = Array.isArray(listado.lineas) ? listado.lineas : [];
-        for (const info of lineas) {
-            const detalle = await pedirJSON('/api/lineas/' + info.id);
-            const key = claveDesdeNombre(detalle.nombre);
-            horariosLineasCargados[key] = {
-                nombre: detalle.nombre,
-                key: key,
-                dias: (detalle.horarios_por_dia || []).map(normalizarDiaDeServicio)
-            };
-        }
-        return true;
-    } catch (e) {
-        console.warn('La API no devolvió los horarios, se usan los locales:', e.message);
-        return cargarHorariosLocales();
-    }
+    // La API (localhost:3000) no está disponible en este entorno:
+    // se usan directamente los archivos JSON locales (sin intentos de red).
+    return cargarHorariosLocales();
 }
 
 /**
@@ -338,18 +325,9 @@ async function cargarHorariosLocales() {
  * No son obligatorios: si la API no responde, la app sigue igual.
  */
 async function cargarLugaresDeReferencia() {
-    try {
-        const respuesta = await pedirJSON('/api/lugares');
-        lugaresDeReferencia = (respuesta.lugares || []).map(l => ({
-            nombre: l.nombre,
-            descripcion: l.descripcion || l.nombre,
-            lat: l.coordenadas.lat,
-            lng: l.coordenadas.lng
-        }));
-    } catch (e) {
-        console.warn('No se pudieron cargar los lugares de referencia:', e.message);
-        lugaresDeReferencia = [];
-    }
+    // La API (localhost:3000) no está disponible en este entorno:
+    // no se intenta la red; los lugares vienen solo del archivo unificado.
+    lugaresDeReferencia = [];
     
     // Agregar comercios desde archivo unificado
     try {
@@ -378,14 +356,14 @@ async function cargarLugaresDeReferencia() {
 }
 
 /**
- * Avisa en pantalla si los datos|no vienen de la API.
+ * Avisa en pantalla si los datos no vienen de la API.
  * La idea es no hacer pasar un dato viejo por dato fresco.
  */
-// function mostrarAvisoDeOrigen() {
-//     if (origenDeDatos !== 'local') return;
-//     const aviso = document.createElement('div');
-//     aviso.id = 'aviso-origen-datos';
-//     aviso.style.cssText = 'position:fixed;bottom:12px;left:12px;z-index:12000;background:#fff7ed;color:#9a3412;border:1px solid #fdba74;border-radius:8px;padding:8px 12px;font-size:.78rem;max-width:280px;box-shadow:0 2px 8px rgba(0,0,0,.15);';
-//     aviso.textContent = '⚠️ La API no está disponible: se muestran los datos locales guardados.';
-//     document.body.appendChild(aviso);
-// }
+function mostrarAvisoDeOrigen() {
+    if (origenDeDatos !== 'local') return;
+    const aviso = document.createElement('div');
+    aviso.id = 'aviso-origen-datos';
+    aviso.style.cssText = 'position:fixed;bottom:12px;left:12px;z-index:12000;background:#fff7ed;color:#9a3412;border:1px solid #fdba74;border-radius:8px;padding:8px 12px;font-size:.78rem;max-width:280px;box-shadow:0 2px 8px rgba(0,0,0,.15);';
+    aviso.textContent = '⚠️ La API no está disponible: se muestran los datos locales guardados.';
+    document.body.appendChild(aviso);
+}

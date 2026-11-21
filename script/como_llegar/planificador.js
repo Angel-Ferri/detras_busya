@@ -106,7 +106,7 @@ function procesarRespuestaSugerencia(confirmar) {
         setTimeout(() => {
             calcularRutaYTiempo();
             cerrarCargandoViaje();
-        }, 450);
+        }, 100);
     }
     sugerenciaTemporal = null;
 }
@@ -133,7 +133,7 @@ function alSeleccionarOrigen() {
     setTimeout(() => {
         calcularRutaYTiempo();
         cerrarCargandoViaje();
-    }, 450);
+    }, 100);
 }
 
 
@@ -152,7 +152,7 @@ function ejecutarBusquedaEnTiempoReal() {
         return;
     }
     document.getElementById('resultados-busqueda').innerHTML = '<li style="padding: 10px; color: #666;">Buscando opciones...</li>';
-    temporizadorBusqueda = setTimeout(() => { ejecutarBusqueda(); }, 800);
+    temporizadorBusqueda = setTimeout(() => { ejecutarBusqueda(); }, 300);
 }
 
 /**
@@ -209,7 +209,7 @@ async function ejecutarBusqueda() {
                 setTimeout(() => {
                     encontrarViajeMasOptimo(item.parada.lat, item.parada.lng, item.parada.nombre);
                     cerrarCargandoViaje();
-                }, 150);
+                }, 50);
             };
             
             contenedorResultados.appendChild(li);
@@ -249,7 +249,7 @@ async function ejecutarBusqueda() {
                 setTimeout(() => {
                     encontrarViajeMasOptimo(parseFloat(lugar.lat), parseFloat(lugar.lon || lugar.lng), nombreFormateado);
                     cerrarCargandoViaje();
-                }, 150);
+                }, 50);
             };
             
             contenedorResultados.appendChild(li);
@@ -274,7 +274,7 @@ function seleccionarDestinoDesdeBuscador(lineaKey, paradaIndex, parada, limpiarI
     setTimeout(() => {
         document.getElementById('select-destino').value = paradaIndex;
         alSeleccionarDestino();
-    }, 150);
+    }, 50);
 }
 
 // Si se hace clic fuera del buscador, se cierran los resultados.
@@ -446,12 +446,34 @@ function cerrarCargandoViaje() {
 let opcionesViajeActuales = [];
 let infoDestinoActual = null;
 
+// Caché de resultados por (ubicación usuario + destino) para evitar recalcular
+// el mismo viaje si el usuario lo vuelve a pedir (optimización B).
+const CACHE_VIAJES = new Map();
+const MAX_CACHE_VIAJES = 20;
+function claveCacheViaje(latU, lngU, latD, lngD) {
+    return (Number(latU).toFixed(4) + ',' + Number(lngU).toFixed(4)) + '|' +
+           (Number(latD).toFixed(4) + ',' + Number(lngD).toFixed(4));
+}
+
 function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
     document.getElementById('resultados-busqueda').innerHTML = '';
     document.getElementById('buscador-lugares').value = nombreLugar;
 
     if (!ubicacionUsuario) {
         alert('Necesitamos acceso a tu ubicación GPS.');
+        return;
+    }
+
+    // Caché: si ya calculamos este viaje (misma ubicación + destino), reusarlo.
+    const claveCache = claveCacheViaje(ubicacionUsuario.lat, ubicacionUsuario.lng, latDestino, lngDestino);
+    const cacheHit = CACHE_VIAJES.get(claveCache);
+    if (cacheHit) {
+        opcionesViajeActuales = JSON.parse(JSON.stringify(cacheHit.opciones));
+        infoDestinoActual = { lat: latDestino, lng: lngDestino, nombre: nombreLugar };
+        document.getElementById('resultados-busqueda').innerHTML = '';
+        const buscador = document.getElementById('buscador-lugares');
+        if (buscador) buscador.value = nombreLugar;
+        mostrarListaDeOpciones();
         return;
     }
 
@@ -466,7 +488,7 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
     let radioOrigenKm = 0.5;
     let origenesValidos = [];
     
-    while (origenesValidos.length === 0 && radioOrigenKm <= 3.0) {
+    while (radioOrigenKm <= 2.0) {
         for (const keyLinea in datosLineasCargados) {
             const linea = datosLineasCargados[keyLinea];
             linea.paradas.forEach((p, idx) => {
@@ -481,8 +503,16 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
                 }
             });
         }
-        if (origenesValidos.length === 0) radioOrigenKm += 0.5;
+        radioOrigenKm += 0.5;
     }
+
+    // Deduplicar paradas de origen candidatas evaluadas en distintos radios
+    const origenesUnicosMap = new Map();
+    for (const o of origenesValidos) {
+        const clave = `${o.lineaKey}-${o.idxOriginal}`;
+        if (!origenesUnicosMap.has(clave)) origenesUnicosMap.set(clave, o);
+    }
+    origenesValidos = Array.from(origenesUnicosMap.values());
 
     if (origenesValidos.length === 0) {
         alert('No hay líneas operando cerca de tu ubicación actual.');
@@ -490,13 +520,17 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
     }
 
     function registrarOpcion(clave, viaje, tiempo) {
+        const tiempoRedondeado = Math.round(tiempo);
         if (!opcionesMap.has(clave)) {
-            viaje.tiempoEstimado = Math.round(tiempo);
+            viaje.tiempoEstimado = tiempoRedondeado;
             opcionesMap.set(clave, viaje);
         } else {
             const existente = opcionesMap.get(clave);
-            if (viaje.metrosDestino < existente.metrosDestino || (viaje.metrosDestino === existente.metrosDestino && tiempo < existente.tiempoEstimado)) {
-                viaje.tiempoEstimado = Math.round(tiempo);
+            // El viaje óptimo es el de MENOR tiempo total.
+            // En empate, se prefiere el que deja más cerca del destino (menos caminata final).
+            if (tiempoRedondeado < existente.tiempoEstimado ||
+                (tiempoRedondeado === existente.tiempoEstimado && viaje.metrosDestino < existente.metrosDestino)) {
+                viaje.tiempoEstimado = tiempoRedondeado;
                 opcionesMap.set(clave, viaje);
             }
         }
@@ -584,7 +618,7 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
     }
 
     opcionesViajeActuales = Array.from(opcionesMap.values())
-        .sort((a, b) => a.metrosDestino - b.metrosDestino || a.tiempoEstimado - b.tiempoEstimado)
+        .sort((a, b) => (a.tiempoEstimado || 0) - (b.tiempoEstimado || 0) || (a.metrosDestino || 0) - (b.metrosDestino || 0))
         .slice(0, 2);
 
     // 🔥 4. AGREGAR DIRECTOS ABSOLUTOS (3ra y 4ta opción)
@@ -634,8 +668,8 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         }
     }
 
-    // Ordenamos las opciones directas absolutas (de mejor a peor)
-    directosAbsolutos.sort((a, b) => a.metrosDestino - b.metrosDestino || a.tiempoEstimado - b.tiempoEstimado);
+    // Ordenamos las opciones directas absolutas (de mejor a peor: menor tiempo total primero)
+    directosAbsolutos.sort((a, b) => (a.tiempoEstimado || 0) - (b.tiempoEstimado || 0) || (a.metrosDestino || 0) - (b.metrosDestino || 0));
 
     // Agregamos hasta 2 opciones directas (si existen y no están repetidas)
     for (const directo of directosAbsolutos) {
@@ -647,7 +681,7 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         );
         
         // Solo agrega si no existe, limitando el total del modal a 4 opciones máximo
-        if (!yaExiste && opcionesViajeActuales.length < 4) {
+        if (!yaExiste && opcionesViajeActuales.length < 3) {
             opcionesViajeActuales.push(directo);
         }
     }
@@ -656,6 +690,15 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         alert('No encontramos opciones viables para acercarte a ese destino.');
         return;
     }
+
+    // Guardar en caché para reusar si se vuelve a pedir el mismo viaje.
+    if (CACHE_VIAJES.size >= MAX_CACHE_VIAJES) {
+        const primeraClave = CACHE_VIAJES.keys().next().value;
+        CACHE_VIAJES.delete(primeraClave);
+    }
+    CACHE_VIAJES.set(claveCache, {
+        opciones: JSON.parse(JSON.stringify(opcionesViajeActuales))
+    });
 
     mostrarListaDeOpciones();
 }
@@ -736,10 +779,13 @@ function mostrarListaDeOpciones() {
     const modalContent = document.createElement('div');
     modalContent.style.cssText = 'background: white; width: 90%; max-width: 380px; max-height: 85vh; overflow-y: auto; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-family: sans-serif;';
     
-    const cantidadOpciones = Math.min(opcionesViajeActuales.length, 4);
+    // Ordenamos las opciones del modal por tiempo total ascendente (viaje más eficiente primero)
+    opcionesViajeActuales.sort((a, b) => (a.tiempoEstimado || 0) - (b.tiempoEstimado || 0) || (a.metrosDestino || 0) - (b.metrosDestino || 0));
+
+    const cantidadOpciones = Math.min(opcionesViajeActuales.length, 3);
     let htmlOpciones = `<h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #1e293b; text-align: center;">🚌 ${cantidadOpciones} opciones para ir a:<br><span style="color: #2563eb;">${infoDestinoActual.nombre}</span></h3>`;
     
-    opcionesViajeActuales.slice(0, 4).forEach((opcion, index) => {
+    opcionesViajeActuales.slice(0, 3).forEach((opcion, index) => {
         if (opcion.tipo === 'directo') {
             htmlOpciones += `
                 <button onclick="seleccionarOpcionViaje(${index})" style="width: 100%; text-align: left; padding: 12px; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; cursor: pointer;">
