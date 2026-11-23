@@ -28,37 +28,79 @@ function inicializarMapa() {
     }).addTo(mapa);
 }
 
+/** Ubicación por defecto (centro de Villa Mercedes) si el GPS falla. */
+const UBICACION_POR_DEFECTO = { lat: -33.67451974632388, lng: -65.46229376889399 };
+
+/**
+ * Aplica una nueva posición del usuario y precarga el contexto del origen.
+ * Si el desplazamiento es menor a 100 m, no se vuelve a analizar (debounce espacial).
+ */
+function actualizarUbicacionUsuario(lat, lng) {
+    ubicacionUsuario = { lat: lat, lng: lng };
+    mostrarUsuario();
+
+    if (typeof analizarUbicacionUsuario !== 'function') return;
+
+    const seMovioLoSuficiente = !ultimaPosicionAnalizada ||
+        calcularDistancia(
+            [ultimaPosicionAnalizada.lat, ultimaPosicionAnalizada.lng],
+            [lat, lng]
+        ) > 0.1; // 100 metros
+
+    if (seMovioLoSuficiente) {
+        ultimaPosicionAnalizada = { lat: lat, lng: lng };
+        analizarUbicacionUsuario(lat, lng);
+    }
+}
+
 function obtenerUbicacionUsuario() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            pos => {
-                ubicacionUsuario = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                mostrarUsuario();
-            },
-            err => {
-                console.warn('Usando ubicación por defecto:', err.message);
-                ubicacionUsuario = { lat: -33.67451974632388, lng: -65.46229376889399 };
-                mostrarUsuario();
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    if (!navigator.geolocation) {
+        actualizarUbicacionUsuario(UBICACION_POR_DEFECTO.lat, UBICACION_POR_DEFECTO.lng);
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        pos => actualizarUbicacionUsuario(pos.coords.latitude, pos.coords.longitude),
+        err => {
+            console.warn('Usando ubicación por defecto:', err.message);
+            actualizarUbicacionUsuario(UBICACION_POR_DEFECTO.lat, UBICACION_POR_DEFECTO.lng);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+
+    // Seguimiento continuo con debounce espacial: solo recalcula si se mueve > 100 m.
+    if (navigator.geolocation.watchPosition) {
+        navigator.geolocation.watchPosition(
+            pos => actualizarUbicacionUsuario(pos.coords.latitude, pos.coords.longitude),
+            () => { /* silencio: el primer getCurrentPosition ya resolvió o avisó */ },
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 }
         );
-    } else {
-        ubicacionUsuario = { lat: -33.67451974632388, lng: -65.46229376889399 };
-        mostrarUsuario();
     }
 }
 
 /**
  * Pone el marcador de "tu posición" y centra el mapa.
+ * Reutiliza el marcador/círculo existentes para no duplicarlos al actualizar el GPS.
  */
 function mostrarUsuario() {
-    mapa.setView([ubicacionUsuario.lat, ubicacionUsuario.lng], 15);
+    if (!mapa || !ubicacionUsuario) return;
+
+    // Solo centramos el mapa y abrimos el popup la primera vez;
+    // en las actualizaciones del GPS movemos el marcador sin "sacudir" la vista.
+    const primeraVez = !marcadorUsuario;
+
+    if (marcadorUsuario) mapa.removeLayer(marcadorUsuario);
+    if (circuloUsuario) mapa.removeLayer(circuloUsuario);
+
+    if (primeraVez) mapa.setView([ubicacionUsuario.lat, ubicacionUsuario.lng], 15);
+
     marcadorUsuario = L.marker([ubicacionUsuario.lat, ubicacionUsuario.lng], { icon: iconoUsuarioGPS })
         .addTo(mapa)
-        .bindPopup('<div style="text-align: center;">📍 <b>Tu posición</b><br>🚶 Modo a pie</div>')
-        .openPopup();
+        .bindPopup('<div style="text-align: center;">📍 <b>Tu posición</b><br>🚶 Modo a pie</div>');
 
-    L.circle([ubicacionUsuario.lat, ubicacionUsuario.lng], {
+    if (primeraVez) marcadorUsuario.openPopup();
+
+    circuloUsuario = L.circle([ubicacionUsuario.lat, ubicacionUsuario.lng], {
         radius: 60, color: '#7c3aed', fillColor: '#8b5cf6', fillOpacity: 0.2
     }).addTo(mapa);
 }

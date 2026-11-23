@@ -45,6 +45,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 4. Las líneas: paradas y recorrido.
     await cargarRecorridos();
 
+    // 4b. Si el GPS llegó antes que los datos, precargar el contexto ahora.
+    if (ubicacionUsuario && (!contextoOrigenUsuario || !contextoOrigenUsuario.zona)) {
+        analizarUbicacionUsuario(ubicacionUsuario.lat, ubicacionUsuario.lng);
+    }
+
     // 5. La grilla de horarios del día.
     await cargarHorarios();
 

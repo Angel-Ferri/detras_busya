@@ -26,8 +26,36 @@ let mapa = null;
 /** Posición del usuario (lat, lng). Se rellena con el GPS o con un valor por defecto. */
 let ubicacionUsuario = null;
 
+/**
+ * Contexto del origen precargado (una sola vez por posición, con debounce de 100 m).
+ * Evita que "Buscar" tenga que recorrer todas las paradas geográficamente.
+ *   {
+ *     zona: 'urbana' | 'periferia' | 'muy_alejada',
+ *     paradasCercanas: [ { lineaKey, parada, idxOriginal, distCamina, proySeg } ],   // <= 2 km
+ *     paradasAccesoPeriferia: [ ... ],                                              // 3 más cercanas
+ *     distParadaMasCercana: number,  // km
+ *     lat, lng,
+ *     calculadoEn: number
+ *   }
+ */
+let contextoOrigenUsuario = {
+    zona: null,
+    paradasCercanas: [],
+    paradasAccesoPeriferia: [],
+    distParadaMasCercana: null,
+    lat: null,
+    lng: null,
+    calculadoEn: 0
+};
+
+/** Última posición con la que se recalculó el contexto (para el debounce de 100 m). */
+let ultimaPosicionAnalizada = null;
+
 /** Marcador con el ícono de "tu posición". */
 let marcadorUsuario = null;
+
+/** Círculo de precisión alrededor de la posición del usuario. */
+let circuloUsuario = null;
 
 /** Control de ruteo a pie (Leaflet Routing Machine). */
 let routingControlPie = null;

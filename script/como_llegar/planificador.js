@@ -469,6 +469,107 @@ const PENALIZACION_CAMINATA = 1.4;
 const PENALIZACION_TRANSBORDO = 8; // minutos virtuales extra por transbordar
 const LIMITE_CAMINATA_FINAL = 1.5; // km máximos de caminata final (directos/transbordos)
 
+// Umbrales de zona según la distancia a la parada más cercana
+const RADIO_URBANO_KM = 2.0;     // <= 2 km → urbana
+const RADIO_PERIFERIA_KM = 6.0;  // 2–6 km → periferia; > 6 km → muy alejada
+const MAX_PARADAS_ACCESO = 3;    // paradas de acceso para periferia / muy alejada
+
+/**
+ * Precarga el contexto del origen con un solo barrido de todas las paradas.
+ * Clasifica la zona y deja listas las paradas de acceso, de modo que
+ * encontrarViajeMasOptimo() ya no tenga que hacer búsquedas geográficas.
+ */
+function analizarUbicacionUsuario(lat, lng) {
+    if (lat == null || lng == null) return null;
+    if (!datosLineasCargados || Object.keys(datosLineasCargados).length === 0) return null;
+
+    const todas = [];
+    for (const keyLinea in datosLineasCargados) {
+        const linea = datosLineasCargados[keyLinea];
+        linea.paradas.forEach((p, idx) => {
+            const distCamina = calcularDistancia([lat, lng], [p.lat, p.lng]);
+            todas.push({
+                lineaKey: keyLinea,
+                parada: p,
+                idxOriginal: idx,
+                distCamina: distCamina,
+                proySeg: (p.proySeg !== undefined ? p.proySeg : obtenerProyeccionEnRecorrido(linea.recorrido, [p.lat, p.lng]).indiceSegmento)
+            });
+        });
+    }
+
+    if (todas.length === 0) return null;
+    todas.sort((a, b) => a.distCamina - b.distCamina);
+
+    const paradaMasCercana = todas[0];
+    const paradasCercanas = todas.filter(o => o.distCamina <= RADIO_URBANO_KM);
+
+    let contexto;
+    if (paradasCercanas.length > 0) {
+        contexto = {
+            zona: 'urbana',
+            paradasCercanas: paradasCercanas,
+            paradasAccesoPeriferia: [],
+            distParadaMasCercana: paradaMasCercana.distCamina,
+            paradaMasCercana: paradaMasCercana,
+            lat: lat, lng: lng, calculadoEn: Date.now()
+        };
+    } else {
+        // 3 paradas de acceso, priorizando líneas distintas para dar variedad.
+        const acceso = [];
+        const lineasUsadas = new Set();
+        for (const o of todas) {
+            if (acceso.length >= MAX_PARADAS_ACCESO) break;
+            if (lineasUsadas.has(o.lineaKey)) continue;
+            acceso.push(o);
+            lineasUsadas.add(o.lineaKey);
+        }
+        if (acceso.length < MAX_PARADAS_ACCESO) {
+            for (const o of todas) {
+                if (acceso.length >= MAX_PARADAS_ACCESO) break;
+                if (acceso.indexOf(o) === -1) acceso.push(o);
+            }
+        }
+
+        contexto = {
+            zona: (paradaMasCercana.distCamina <= RADIO_PERIFERIA_KM ? 'periferia' : 'muy_alejada'),
+            paradasCercanas: [],
+            paradasAccesoPeriferia: acceso,
+            distParadaMasCercana: paradaMasCercana.distCamina,
+            paradaMasCercana: paradaMasCercana,
+            lat: lat, lng: lng, calculadoEn: Date.now()
+        };
+    }
+
+    contextoOrigenUsuario = contexto;
+    actualizarBannerZona();
+    return contexto;
+}
+
+/** Muestra u oculta el aviso anticipado de zona alejada en el panel de búsqueda. */
+function actualizarBannerZona() {
+    const banner = document.getElementById('aviso-zona-usuario');
+    if (!banner) return;
+
+    const ctx = contextoOrigenUsuario;
+    if (!ctx || !ctx.zona || ctx.zona === 'urbana' || ctx.distParadaMasCercana == null) {
+        banner.style.display = 'none';
+        banner.innerHTML = '';
+        return;
+    }
+
+    const p = ctx.paradaMasCercana || (ctx.paradasAccesoPeriferia && ctx.paradasAccesoPeriferia[0]) || null;
+    const linea = p ? datosLineasCargados[p.lineaKey] : null;
+    const km = Number(ctx.distParadaMasCercana).toFixed(1);
+    const nombreParada = p ? p.parada.nombre : 'una parada de la red';
+    const nombreLinea = linea ? linea.nombre : '';
+    const titulo = (ctx.zona === 'muy_alejada') ? 'Zona muy alejada' : 'Zona alejada';
+
+    banner.innerHTML = `📍 <b>${titulo}:</b> estás a <b>${km} km</b> de la red urbana. ` +
+        `La parada más cercana es <b>${nombreParada}</b>${nombreLinea ? ' (' + nombreLinea + ')' : ''}.`;
+    banner.style.display = 'block';
+}
+
 function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
     document.getElementById('resultados-busqueda').innerHTML = '';
     document.getElementById('buscador-lugares').value = nombreLugar;
@@ -498,21 +599,29 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
     const minPorKmCaminando = 12; 
     const minPorParadaColectivo = 1.5; 
 
-    // 1. Buscar paradas de origen cercanas (un solo recorrido, sin bucle redundante)
-    const origenesValidos = [];
+    // Precalcular las paradas destino más cercanas al destino final, por línea.
+    // FASE 2 y FASE 3 evalúan solo estas candidatas (evita millones de cálculos).
+    const MAX_DESTINOS_POR_LINEA = 10;
+    const destinosCercanosPorLinea = {};
     for (const keyLinea in datosLineasCargados) {
         const linea = datosLineasCargados[keyLinea];
-        linea.paradas.forEach((p, idx) => {
-            const distCamina = calcularDistancia([ubicacionUsuario.lat, ubicacionUsuario.lng], [p.lat, p.lng]);
-            if (distCamina <= 2.0) {
-                origenesValidos.push({
-                    lineaKey: keyLinea, parada: p, idxOriginal: idx,
-                    proySeg: (p.proySeg !== undefined ? p.proySeg : obtenerProyeccionEnRecorrido(linea.recorrido, [p.lat, p.lng]).indiceSegmento),
-                    distCamina: distCamina
-                });
-            }
-        });
+        destinosCercanosPorLinea[keyLinea] = linea.paradas
+            .map((p, idx) => ({ parada: p, idxDest: idx, distFinal: calcularDistancia([latDestino, lngDestino], [p.lat, p.lng]) }))
+            .sort((a, b) => a.distFinal - b.distFinal)
+            .slice(0, MAX_DESTINOS_POR_LINEA);
     }
+
+    // 1. Usar el contexto de origen ya precargado (sin barrido geográfico completo).
+    if (!contextoOrigenUsuario || !contextoOrigenUsuario.zona) {
+        analizarUbicacionUsuario(ubicacionUsuario.lat, ubicacionUsuario.lng);
+    }
+    const ctxOrigen = contextoOrigenUsuario || {};
+    const zonaOrigen = ctxOrigen.zona || 'urbana';
+    const esMuyAlejada = (zonaOrigen === 'muy_alejada');
+    const esModoPeriferia = (zonaOrigen === 'periferia' || zonaOrigen === 'muy_alejada');
+    const origenesValidos = (zonaOrigen === 'urbana')
+        ? (ctxOrigen.paradasCercanas || [])
+        : (ctxOrigen.paradasAccesoPeriferia || []);
 
     if (origenesValidos.length === 0) {
         alert('No hay líneas operando cerca de tu ubicación actual.');
@@ -541,13 +650,15 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
     for (const origen of origenesValidos) {
         const linea = datosLineasCargados[origen.lineaKey];
 
-        linea.paradas.forEach((pDestino, idxDest) => {
+        for (const candDest of destinosCercanosPorLinea[origen.lineaKey]) {
+            const pDestino = candDest.parada;
+            const idxDest = candDest.idxDest;
             const proyDest = (pDestino.proySeg !== undefined ? pDestino.proySeg : obtenerProyeccionEnRecorrido(linea.recorrido, [pDestino.lat, pDestino.lng]).indiceSegmento);
 
             // Verificamos que el segmento del destino esté adelante en la ruta (maneja circulares)
             if (esAdelanteEnRecorrido(proyDest, origen.proySeg, linea.recorrido)) {
-                const distCaminaFinal = calcularDistancia([latDestino, lngDestino], [pDestino.lat, pDestino.lng]);
-                if (distCaminaFinal > LIMITE_CAMINATA_FINAL) return; // límite de caminata final
+                const distCaminaFinal = candDest.distFinal;
+                if (distCaminaFinal > LIMITE_CAMINATA_FINAL) continue; // límite de caminata final
                 const paradasRecorridas = Math.abs(idxDest - origen.idxOriginal);
 
                 const tiempoReal = (origen.distCamina * minPorKmCaminando) + (paradasRecorridas * minPorParadaColectivo) + (distCaminaFinal * minPorKmCaminando);
@@ -563,15 +674,18 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
                     destino: { parada: pDestino, idx: idxDest, dist: distCaminaFinal },
                     metrosDestino: Math.round(distCaminaFinal * 1000),
                     puntajeRanking: puntajeRanking,
-                    categoria: 'Directo'
+                    categoria: 'Directo',
+                    esModoPeriferia: esModoPeriferia
                 };
 
                 registrarOpcion('directo-' + origen.lineaKey, viajeDirecto, tiempoReal, puntajeRanking);
             }
-        });
+        }
     }
 
-    // 3. Evaluar Transbordos Dinámicos usando la matriz precalculada
+    // 3. Evaluar Transbordos Dinámicos usando la matriz precalculada.
+    //    En zona "muy alejada" se omiten para no congelar el teléfono.
+    if (!esMuyAlejada) {
     for (const origenL1 of origenesValidos) {
         const L1 = datosLineasCargados[origenL1.lineaKey];
         for (const keyL2 in datosLineasCargados) {
@@ -588,13 +702,16 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
                 const proyBajada = (pBajadaL1.proySeg !== undefined ? pBajadaL1.proySeg : obtenerProyeccionEnRecorrido(L1.recorrido, [pBajadaL1.lat, pBajadaL1.lng]).indiceSegmento);
                 if (!esAdelanteEnRecorrido(proyBajada, origenL1.proySeg, L1.recorrido)) continue;
 
-                L2.paradas.forEach((pDest2, idxDest2) => {
-                    const proyDest2 = (pDest2.proySeg !== undefined ? pDest2.proySeg : obtenerProyeccionEnRecorrido(L2.recorrido, [pDest2.lat, pDest2.lng]).indiceSegmento);
-                    const proySubidaL2 = (pSubidaL2.proySeg !== undefined ? pSubidaL2.proySeg : obtenerProyeccionEnRecorrido(L2.recorrido, [pSubidaL2.lat, pSubidaL2.lng]).indiceSegmento);
-                    if (!esAdelanteEnRecorrido(proyDest2, proySubidaL2, L2.recorrido)) return;
+                const proySubidaL2 = (pSubidaL2.proySeg !== undefined ? pSubidaL2.proySeg : obtenerProyeccionEnRecorrido(L2.recorrido, [pSubidaL2.lat, pSubidaL2.lng]).indiceSegmento);
 
-                    const distCaminaFinal = calcularDistancia([latDestino, lngDestino], [pDest2.lat, pDest2.lng]);
-                    if (distCaminaFinal > LIMITE_CAMINATA_FINAL) return;
+                for (const cand2 of destinosCercanosPorLinea[keyL2]) {
+                    const pDest2 = cand2.parada;
+                    const idxDest2 = cand2.idxDest;
+                    const proyDest2 = (pDest2.proySeg !== undefined ? pDest2.proySeg : obtenerProyeccionEnRecorrido(L2.recorrido, [pDest2.lat, pDest2.lng]).indiceSegmento);
+                    if (!esAdelanteEnRecorrido(proyDest2, proySubidaL2, L2.recorrido)) continue;
+
+                    const distCaminaFinal = cand2.distFinal;
+                    if (distCaminaFinal > LIMITE_CAMINATA_FINAL) continue;
 
                     const paradasL1 = Math.abs(idxBajadaL1 - origenL1.idxOriginal);
                     const paradasL2 = Math.abs(idxDest2 - idxSubidaL2);
@@ -618,15 +735,18 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
                         L2: { key: keyL2, nombre: L2.nombre, subida: { parada: pSubidaL2, idx: idxSubidaL2 }, destino: { parada: pDest2, idx: idxDest2 } },
                         metrosDestino: Math.round(distCaminaFinal * 1000),
                         distEscala: Math.round(distEscalaCamina * 1000),
+                        distOrigen: origenL1.distCamina,
                         puntajeRanking: puntajeRanking,
-                        categoria: 'Transbordo'
+                        categoria: 'Transbordo',
+                        esModoPeriferia: esModoPeriferia
                     };
 
                     registrarOpcion('transbordo-' + origenL1.lineaKey + '-' + keyL2, viajeTransbordo, tiempoReal, puntajeRanking);
-                });
+                }
             }
         }
     }
+    } // fin if (!esMuyAlejada)
 
     // 1) Top 2 del grupo directos+transbordos por PUNTAJE de ranking
     opcionesViajeActuales = Array.from(opcionesMap.values())
@@ -635,9 +755,10 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
                        || (a.metrosDestino || 0) - (b.metrosDestino || 0))
         .slice(0, 2);
 
-    // 2) Directos absolutos: evaluar las 3 paradas más cercanas al destino y quedarse
-    //    con el par (origen, destino) de menor costo total por línea.
+    // 2) Directos absolutos: solo en zona urbana (en periferia/muy alejada ya se
+    //    evaluaron las 3 paradas de acceso en la FASE 2).
     let directosAbsolutos = [];
+    if (zonaOrigen === 'urbana') {
     for (const keyLinea in datosLineasCargados) {
         const linea = datosLineasCargados[keyLinea];
 
@@ -689,6 +810,7 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
 
         if (mejorParLinea) directosAbsolutos.push(mejorParLinea.viaje);
     }
+    } // fin if (zonaOrigen === 'urbana')
 
     // 3) Ordenar los directos absolutos por puntaje de ranking
     directosAbsolutos.sort((a, b) => (a.puntajeRanking || a.tiempoEstimado || 0) - (b.puntajeRanking || b.tiempoEstimado || 0)
@@ -815,6 +937,18 @@ function mostrarListaDeOpciones() {
 
     const cantidadOpciones = Math.min(opcionesViajeActuales.length, 4);
     let htmlOpciones = `<h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #1e293b; text-align: center;">🚌 ${cantidadOpciones} opciones para ir a:<br><span style="color: #2563eb;">${infoDestinoActual.nombre}</span></h3>`;
+
+    // Aviso extra para usuarios alejados de la red urbana.
+    const opcionPeriferia = opcionesViajeActuales.find(o => o.esModoPeriferia);
+    if (opcionPeriferia) {
+        const ctxP = contextoOrigenUsuario;
+        const kmP = (ctxP && ctxP.distParadaMasCercana != null) ? Number(ctxP.distParadaMasCercana).toFixed(1) : '?';
+        const paradaP = (ctxP && ctxP.paradaMasCercana && ctxP.paradaMasCercana.parada)
+            || (opcionPeriferia.origen && opcionPeriferia.origen.parada)
+            || (opcionPeriferia.L1 && opcionPeriferia.L1.origen && opcionPeriferia.L1.origen.parada);
+        const nombreParadaP = paradaP ? paradaP.nombre : 'la parada de acceso';
+        htmlOpciones += `<div style="background:#fff7ed;border:1px solid #fdba74;color:#9a3412;padding:8px 10px;border-radius:8px;margin-bottom:12px;font-size:0.8rem;line-height:1.35;">📍 Estás a <b>${kmP} km</b> de la red urbana. Acércate hasta <b>${nombreParadaP}</b> para iniciar el viaje.</div>`;
+    }
     
     opcionesViajeActuales.slice(0, 4).forEach((opcion, index) => {
         if (opcion.tipo === 'directo') {
@@ -824,6 +958,7 @@ function mostrarListaDeOpciones() {
                 <button onclick="seleccionarOpcionViaje(${index})" style="width: 100%; text-align: left; padding: 12px; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; cursor: pointer;">
                     <div style="font-weight: bold; color: #2563eb; font-size: 1.05rem;">🚌 ${opcion.nombreLinea} (Directo) ${badge} ${cat}</div>
                     <div style="font-size: 0.9rem; color: #475569; margin-top: 6px;">⏱️ Tiempo total: <b>~${opcion.tiempoEstimado} min</b></div>
+                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">🚶 Caminás ${Math.round(((opcion.origen ? opcion.origen.dist : 0) || 0) * 1000)} m hasta la parada de subida.</div>
                     <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">📍 Caminás ${opcion.metrosDestino}m al llegar.</div>
                 </button>`;
         } else {
@@ -833,6 +968,7 @@ function mostrarListaDeOpciones() {
                 <button onclick="seleccionarOpcionViaje(${index})" style="width: 100%; text-align: left; padding: 12px; margin-bottom: 10px; border: 2px solid #fed7aa; border-radius: 8px; background: #fff7ed; cursor: pointer;">
                     <div style="font-weight: bold; color: #ea580c; font-size: 1.05rem;">🔄 ${opcion.L1.nombre} ➔ ${opcion.L2.nombre} ${badgeT} ${catT}</div>
                     <div style="font-size: 0.9rem; color: #475569; margin-top: 6px;">⏱️ Tiempo total: <b>~${opcion.tiempoEstimado} min</b></div>
+                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">🚶 Caminás ${Math.round((opcion.distOrigen || 0) * 1000)} m hasta la parada de subida.</div>
                     <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">🚶 Caminás ${opcion.distEscala}m en la escala y ${opcion.metrosDestino}m al destino.</div>
                 </button>`;
         }

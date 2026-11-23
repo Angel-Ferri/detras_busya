@@ -5,6 +5,47 @@ Alcance: Evaluación de eficiencia → limpieza/arquitectura inicial.
 
 ---
 
+## ✅ Cambio 14 — Arquitectura de precarga por ubicación (`contextoOrigenUsuario`)
+
+### Tipo de cambio
+Optimización de rendimiento + UX para usuarios alejados de la ciudad.
+
+### Antes
+- `encontrarViajeMasOptimo()` hacía un barrido geográfico de **todas** las paradas en cada búsqueda (FASE 1).
+- Si el usuario estaba lejos de la red, devolvía "No hay líneas operando cerca" sin alternativas.
+- La búsqueda urbana llegaba a hacer **~2,98 millones** de llamadas a `calcularDistancia` (FASE 3 recorría todas las paradas destino para cada par de transbordo).
+
+### Ahora
+1. **`analizarUbicacionUsuario(lat, lng)`** (`planificador.js`): un solo barrido de las 325 paradas que clasifica la zona y deja el contexto listo:
+   - `urbana`: hay paradas ≤ 2 km → guarda **todas** en `paradasCercanas` (ordenadas por distancia).
+   - `periferia`: la más cercana está entre 2 y 6 km → guarda las **3 paradas de acceso** (priorizando líneas distintas).
+   - `muy_alejada`: la más cercana supera 6 km → mismas 3 paradas de acceso.
+2. **`contextoOrigenUsuario`** (`estado.js`) guarda zona, paradas y distancia mínima.
+3. **`encontrarViajeMasOptimo()` ya no hace FASE 1**: usa el contexto precargado.
+   - Urbana: FASE 2 + FASE 3 sobre `paradasCercanas`.
+   - Periferia: FASE 2 + FASE 3 sobre las 3 paradas de acceso.
+   - Muy alejada: **solo FASE 2** (directos); se omite FASE 3 para no congelar el teléfono.
+4. **Opciones con `esModoPeriferia: true`** y aviso en el modal: "Estás a X km de la red urbana. Acércate hasta [Parada]".
+5. **Banner anticipado** `#aviso-zona-usuario` (`como_llegar.html`): muestra la zona y la parada más cercana antes de buscar.
+6. **Debounce espacial de 100 m** (`mapa.js`): `watchPosition` solo recalcula el contexto si el usuario se desplazó más de 100 m.
+7. **Precálculo de destinos candidatos**: `destinosCercanosPorLinea` (top 10 paradas más cercanas al destino por línea) se calcula una vez por búsqueda; FASE 2 y FASE 3 evalúan solo esas candidatas y reutilizan su `distFinal`.
+
+### Impacto medido (navegador, 217 paradas urbanas)
+| Métrica | Antes | Ahora |
+|---|---|---|
+| Llamadas a `calcularDistancia` | ~2.980.000 | ~1.140 |
+| Cálculo del viaje (sin render) | ~570 ms | ~85 ms |
+| Análisis de ubicación | — | ~0,1 ms |
+| Recálculo por movimiento < 100 m | — | 0 (evitado) |
+
+### Verificación
+- `node --check` OK en todos los archivos.
+- Urbana: 4 opciones, banner oculto.
+- Periferia (3,5 km): 3 paradas de acceso, banner y aviso en el modal, 2 opciones.
+- Muy alejada (10 km): solo directos (sin transbordos), banner correcto.
+
+---
+
 ## ✅ Cambio 1 — Consolidación de `cargarDatosLineaCompleta` en `script/dias.js`
 
 ### Tipo de cambio
