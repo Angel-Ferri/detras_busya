@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Busya - Inicio</title>
     <link rel="stylesheet" href="estilos/style.css">
-    <link rel="manifest" href="manifest.webmanifest" />
-    <meta name="theme-color" content="#2563eb" />
+    <link rel="icon" href="autobus-escolar.ico" type="image/x-icon">
     <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-4HNJ40EJJG"></script>
 <script>
@@ -222,15 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
     <!-- Scripts de la aplicación -->
-    <script src="script/nativo.js"></script>
     <script src="script/dias.js"></script>
     <script src="script/app.js"></script>
-    <script>
-      if (!window.Capacitor && 'serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
-          navigator.serviceWorker.register('sw.js').catch(function () {});
-        });
-      }
-    </script>
 </body>
 </html>

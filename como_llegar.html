@@ -5,19 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Busya - ¿Cómo Llegar?</title>
     <link rel="stylesheet" href="estilos/style.css">
-    <link rel="manifest" href="manifest.webmanifest" />
-    <meta name="theme-color" content="#2563eb" />
+    <link rel="icon" href="autobus-escolar.ico" type="image/x-icon">
 
-    <!-- 1. Leaflet local (funciona sin internet en el APK) -->
-    <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
-    <script src="vendor/leaflet/leaflet.js"></script>
+    <!-- 1. Leaflet CSS y JS Core -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- 2. Leaflet Routing Machine local -->
-    <link rel="stylesheet" href="vendor/leaflet-routing-machine/leaflet-routing-machine.css" />
-    <script src="vendor/leaflet-routing-machine/leaflet-routing-machine.min.js"></script>
+    <!-- 2. Leaflet Routing Machine CSS y JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.min.js"></script>
 
-    <!-- 3. PolylineDecorator local -->
-    <script src="vendor/leaflet-polylinedecorator/leaflet.polylineDecorator.js"></script>
+    <!-- 3. CDN PolylineDecorator -->
+    <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
     
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-4HNJ40EJJG"></script>
@@ -38,9 +37,6 @@
             
             <div class="panel-busqueda-viaje">
                 
-                <!-- Aviso de sin conexión (APK / modo offline) -->
-                <div id="aviso-offline" style="display: none; background: #e0f2fe; border: 1px solid #7dd3fc; color: #075985; padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; font-size: 0.85rem; line-height: 1.35;">Sin conexión: usando los datos y el mapa guardados en el dispositivo.</div>
-
                 <!-- Aviso anticipado si el usuario está lejos de la red urbana -->
                 <div id="aviso-zona-usuario" style="display: none; background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; padding: 8px 10px; border-radius: 8px; margin-bottom: 12px; font-size: 0.85rem; line-height: 1.35;"></div>
 
@@ -185,7 +181,6 @@
          8. inicio       → el arranque de la página
          script/dias.js va primero porque define resolverDiaDeServicio(),
          que se usa para saber qué día de servicio es hoy. -->
-    <script src="script/nativo.js"></script>
     <script src="script/dias.js"></script>
     <script src="script/como_llegar/estado.js"></script>
     <script src="script/como_llegar/utilidades.js"></script>
@@ -196,12 +191,5 @@
     <script src="script/como_llegar/simulador.js"></script>
     <script src="script/como_llegar/inicio.js"></script>
     <script src="panel/main.js" defer></script>
-    <script>
-      if (!window.Capacitor && 'serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
-          navigator.serviceWorker.register('sw.js').catch(function () {});
-        });
-      }
-    </script>
 </body>
 </html>

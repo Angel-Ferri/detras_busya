@@ -5,55 +5,6 @@ Alcance: Evaluación de eficiencia → limpieza/arquitectura inicial.
 
 ---
 
-## ✅ Cambio 16 — Conversión a APK y modo offline
-
-### Tipo de cambio
-Nuevo: app empaquetada con Capacitor 6; datos, líneas, paradas, recorridos, horarios y mapa offline.
-
-### Cambios
-- **Capacitor 6** (`capacitor.config.json`, `android/`): appId `com.busya.app`, webDir `www`.
-- **`tools/build-www.js`**: genera `www/` con HTML/JS/CSS/datos/tiles/vendor, eliminando analytics/ads.
-- **Tiles offline**: descarga z13-16 de Villa Mercedes (1150 tiles, ~11 MB) con `tools/descargar-tiles.js`.
-- **Mapa local**: `inicializarMapa()` usa `tiles/osm/{z}/{x}/{y}.png` (maxNativeZoom 16) con fallback online.
-- **`script/nativo.js`**: geolocalización nativa, botón atrás de Android, barra de estado.
-- **Ruta a pie sin internet**: `trazarRutaAPie()` cae a línea punteada directa si OSRM no responde.
-- **Permisos Android**: INTERNET, ACCESS_NETWORK_STATE, ACCESS_COARSE/FINE_LOCATION.
-- **Iconos y splash** generados desde `estilos/img/logo.jpeg`.
-- **`.gitignore`**, **`GUIA_APK.md`**.
-
-### Verificación
-- `npm run build:web` genera `www/` (1199 archivos, ~13 MB).
-- `npm run android:apk` compila `app-debug.apk`.
-- App abre en modo offline: paradas, líneas y recorridos disponibles.
-
----
-
-## ✅ Cambio 17 — Búsqueda offline y caché de datos
-
-### Tipo de cambio
-Mejora: la búsqueda funciona sin internet; caché de JSON y direcciones.
-
-### Cambios
-- **`buscarLugaresLocales()`**: busca en los 1893 locales guardados (`lugaresDeReferencia`).
-- **`buscarDireccionesOnline()`**: Nominatim solo si hay conexión, con timeout de 5 s y caché en `localStorage` (TTL 30 días, máx. 80 entradas).
-- **`pedirJSONLocal()`**: `cache: 'force-cache'` + versión `?v=15` (en web).
-- **`cargarLugaresDeReferencia()`**: agrega también `lugares_de_referencia` del archivo unificado.
-- **Aviso `#aviso-offline`** en `como_llegar.html` cuando `navigator.onLine === false`.
-
----
-
-## ✅ Cambio 18 — PWA (web sin conexión)
-
-### Tipo de cambio
-Mejora: la versión web queda instalable y funciona offline tras la primera visita.
-
-### Cambios
-- **`manifest.webmanifest`** + meta `theme-color`.
-- **`sw.js`**: precache del shell y datos; cache-first para tiles; stale-while-revalidate para JSON; network-first para HTML/JS/CSS.
-- Registro del Service Worker en `index.html` y `como_llegar.html` (solo web, no en el APK).
-
----
-
 ## ✅ Cambio 15 — Opción "Ir caminando" con reglas de decisión
 
 ### Tipo de cambio
