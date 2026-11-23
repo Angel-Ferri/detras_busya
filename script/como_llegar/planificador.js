@@ -570,6 +570,69 @@ function actualizarBannerZona() {
     banner.style.display = 'block';
 }
 
+/**
+ * Evalúa si conviene ofrecer "Ir caminando" como opción.
+ *  A) ≤ 800 m: primera opción (más rápido que esperar el colectivo).
+ *  B) 800 m – 2 km: alternativa solo si el colectivo no ahorra tiempo real.
+ *  C) > 2 km: se oculta, salvo que el destino esté más cerca que la parada más cercana.
+ */
+function evaluarOpcionCaminando(latDestino, lngDestino, opcionesColectivo, esModoPeriferia) {
+    if (!ubicacionUsuario) return { mostrar: false };
+
+    const distRectaKm = calcularDistancia(
+        [ubicacionUsuario.lat, ubicacionUsuario.lng],
+        [latDestino, lngDestino]
+    );
+    // 1.25 corrige la distancia en línea recta a un trazado urbano aproximado.
+    const distRealKm = distRectaKm * 1.25;
+    const tiempoPie = Math.round(distRealKm * 12);
+    const metrosPie = Math.round(distRealKm * 1000);
+
+    const opcionPie = {
+        tipo: 'caminando',
+        nombreLinea: 'Ir caminando',
+        tiempoEstimado: tiempoPie,
+        metrosDestino: metrosPie,
+        distRealKm: distRealKm,
+        categoria: 'A pie',
+        esRecomendada: false,
+        motivo: 'alternativa'
+    };
+
+    // A) Destino muy cercano: prioridad máxima.
+    if (distRealKm <= 0.8) {
+        opcionPie.esRecomendada = true;
+        opcionPie.motivo = 'mas_rapido';
+        return { mostrar: true, prioridad: 'primera', opcion: opcionPie };
+    }
+
+    // B) Distancia media: comparar con el mejor colectivo.
+    if (distRealKm <= 2.0 && opcionesColectivo.length > 0) {
+        const mejorBus = opcionesColectivo[0];
+        const distOrigenKm = (mejorBus.tipo === 'transbordo')
+            ? (mejorBus.distOrigen || 0)
+            : (mejorBus.origen ? mejorBus.origen.dist : 0);
+        const distEscalaKm = (mejorBus.distEscala || 0) / 1000;
+        const distDestinoKm = (mejorBus.metrosDestino || 0) / 1000;
+        const caminataEnBusKm = distOrigenKm + distEscalaKm + distDestinoKm;
+
+        // Casi lo mismo caminando, o el colectivo obliga a caminar casi todo el trayecto.
+        if (tiempoPie <= mejorBus.tiempoEstimado + 3 || caminataEnBusKm >= distRealKm * 0.7) {
+            return { mostrar: true, prioridad: 'alternativa', opcion: opcionPie };
+        }
+    }
+
+    // C) Periferia / muy alejada: el destino está más cerca que la parada más cercana.
+    const ctx = contextoOrigenUsuario;
+    if (esModoPeriferia && ctx && ctx.distParadaMasCercana != null && distRealKm < ctx.distParadaMasCercana) {
+        opcionPie.esRecomendada = true;
+        opcionPie.motivo = 'destino_mas_cerca';
+        return { mostrar: true, prioridad: 'primera', opcion: opcionPie };
+    }
+
+    return { mostrar: false };
+}
+
 function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
     document.getElementById('resultados-busqueda').innerHTML = '';
     document.getElementById('buscador-lugares').value = nombreLugar;
@@ -836,6 +899,17 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
                                        || (a.tiempoEstimado || 0) - (b.tiempoEstimado || 0)
                                        || (a.metrosDestino || 0) - (b.metrosDestino || 0));
 
+    // 6) Evaluar si conviene ofrecer "Ir caminando" y ubicarla según su prioridad.
+    const opcionPie = evaluarOpcionCaminando(latDestino, lngDestino, opcionesViajeActuales, esModoPeriferia);
+    if (opcionPie.mostrar) {
+        if (opcionPie.prioridad === 'primera') {
+            opcionesViajeActuales.unshift(opcionPie.opcion);
+        } else {
+            opcionesViajeActuales.splice(Math.min(1, opcionesViajeActuales.length), 0, opcionPie.opcion);
+        }
+        opcionesViajeActuales = opcionesViajeActuales.slice(0, 4);
+    }
+
     if (opcionesViajeActuales.length === 0) {
         alert('No encontramos opciones viables para acercarte a ese destino.');
         return;
@@ -929,14 +1003,11 @@ function mostrarListaDeOpciones() {
     const modalContent = document.createElement('div');
     modalContent.style.cssText = 'background: white; width: 90%; max-width: 380px; max-height: 85vh; overflow-y: auto; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-family: sans-serif;';
     
-    // Ordenamos las opciones del modal por puntaje de ranking (penaliza caminar/transbordar),
-    // luego por tiempo real y por caminata final.
-    opcionesViajeActuales.sort((a, b) => (a.puntajeRanking || a.tiempoEstimado || 0) - (b.puntajeRanking || b.tiempoEstimado || 0)
-                                       || (a.tiempoEstimado || 0) - (b.tiempoEstimado || 0)
-                                       || (a.metrosDestino || 0) - (b.metrosDestino || 0));
-
+    // El orden ya viene definido por encontrarViajeMasOptimo():
+    // colectivos ordenados por ranking + opción a pie insertada según su prioridad.
     const cantidadOpciones = Math.min(opcionesViajeActuales.length, 4);
-    let htmlOpciones = `<h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #1e293b; text-align: center;">🚌 ${cantidadOpciones} opciones para ir a:<br><span style="color: #2563eb;">${infoDestinoActual.nombre}</span></h3>`;
+    const etiquetaOpciones = (cantidadOpciones === 1) ? 'opción' : 'opciones';
+    let htmlOpciones = `<h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #1e293b; text-align: center;">🧭 ${cantidadOpciones} ${etiquetaOpciones} para ir a:<br><span style="color: #2563eb;">${infoDestinoActual.nombre}</span></h3>`;
 
     // Aviso extra para usuarios alejados de la red urbana.
     const opcionPeriferia = opcionesViajeActuales.find(o => o.esModoPeriferia);
@@ -951,6 +1022,21 @@ function mostrarListaDeOpciones() {
     }
     
     opcionesViajeActuales.slice(0, 4).forEach((opcion, index) => {
+        if (opcion.tipo === 'caminando') {
+            const badgePie = opcion.esRecomendada
+                ? (opcion.motivo === 'destino_mas_cerca'
+                    ? '<span style="background:#0ea5e9;color:white;font-size:0.7rem;padding:2px 6px;border-radius:4px;margin-left:6px;">📍 Tu destino está más cerca que cualquier parada</span>'
+                    : '<span style="background:#16a34a;color:white;font-size:0.7rem;padding:2px 6px;border-radius:4px;margin-left:6px;">🚶 Más rápido que el colectivo</span>')
+                : '';
+            const catPie = '<span style="background:#dcfce7;color:#166534;font-size:0.7rem;padding:2px 6px;border-radius:4px;margin-left:6px;">A pie</span>';
+            htmlOpciones += `
+                <button onclick="seleccionarOpcionViaje(${index})" style="width: 100%; text-align: left; padding: 12px; margin-bottom: 10px; border: 2px solid #86efac; border-radius: 8px; background: #f0fdf4; cursor: pointer;">
+                    <div style="font-weight: bold; color: #15803d; font-size: 1.05rem;">🚶 Caminar hasta el destino ${badgePie} ${catPie}</div>
+                    <div style="font-size: 0.9rem; color: #475569; margin-top: 6px;">⏱️ Tiempo total: <b>~${opcion.tiempoEstimado} min</b></div>
+                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">${opcion.metrosDestino} metros aprox. · Sin esperas</div>
+                </button>`;
+            return;
+        }
         if (opcion.tipo === 'directo') {
             const badge = index === 0 ? '<span style="background:#16a34a;color:white;font-size:0.7rem;padding:2px 6px;border-radius:4px;margin-left:6px;">⭐ Recomendada</span>' : '';
             const cat = opcion.categoria ? `<span style="background:#e0f2fe;color:#0369a1;font-size:0.7rem;padding:2px 6px;border-radius:4px;margin-left:6px;">${opcion.categoria}</span>` : '';
@@ -1071,6 +1157,30 @@ function seleccionarOpcionViaje(index) {
 
     limpiarMapa();
     const btnVolver = `<button onclick="mostrarListaDeOpciones()" style="margin-top: 15px; width: 100%; padding: 8px; border: 1px solid #94a3b8; background: #f1f5f9; border-radius: 6px; cursor: pointer; font-weight: bold; color: #334155;">🔄 Cambiar de línea / Ver otras opciones</button>`;
+
+    if (viaje.tipo === 'caminando') {
+        trazarRutaAPie(ubicacionUsuario, [infoDestinoActual.lat, infoDestinoActual.lng]);
+
+        marcadorDestinoBuscado = L.marker([infoDestinoActual.lat, infoDestinoActual.lng]).addTo(mapa)
+            .bindPopup(`📍 <b>Destino:</b> ${infoDestinoActual.nombre}<br>🚶 A pie`)
+            .openPopup();
+
+        document.getElementById('resumen-viaje').innerHTML = `
+            <div class="paso-itinerario">
+                <p>🚶 Andá caminando hasta <b>${infoDestinoActual.nombre}</b>.</p>
+                <p>${viaje.metrosDestino} metros aprox. · Sin esperas</p>
+            </div>
+            <div style="font-weight: bold; color: #0f172a; margin-top: 10px;">⏱️ Tiempo total: ~${viaje.tiempoEstimado} min.</div>
+            ${btnVolver}
+        `;
+
+        mapa.fitBounds([
+            [ubicacionUsuario.lat, ubicacionUsuario.lng],
+            [infoDestinoActual.lat, infoDestinoActual.lng]
+        ], { padding: [50, 50], animate: false });
+
+        return;
+    }
 
     if (viaje.tipo === 'directo') {
         document.getElementById('select-linea').value = viaje.lineaKey;

@@ -5,6 +5,38 @@ Alcance: Evaluación de eficiencia → limpieza/arquitectura inicial.
 
 ---
 
+## ✅ Cambio 15 — Opción "Ir caminando" con reglas de decisión
+
+### Tipo de cambio
+Mejora de UX/lógica: recomendar caminar solo cuando realmente conviene.
+
+### Antes
+La app siempre ofrecía colectivos, incluso para destinos a 2 cuadras: el usuario podía terminar esperando un bus para hacer 4 cuadras.
+
+### Ahora
+Nueva función **`evaluarOpcionCaminando(latDestino, lngDestino, opcionesColectivo, esModoPeriferia)`**:
+- `distRealKm = distancia recta × 1.25` (corrige el trazado urbano).
+- `tiempoPie = round(distRealKm × 12)` y `metrosPie = round(distRealKm × 1000)`.
+
+| Escenario | Regla | Acción |
+|---|---|---|
+| **A. Corta** | `distRealKm ≤ 0.8 km` | **Opción 1**, badge "🚶 Más rápido que el colectivo" |
+| **B. Media** | `0.8 < distRealKm ≤ 2.0 km` y (`tiempoPie ≤ mejorBus + 3` o `caminataEnBus ≥ 70% de distRealKm`) | Alternativa (opción 2) |
+| **C. Larga** | `distRealKm > 2.0 km` | Ocultar, salvo periferia con `distRealKm < distParadaMasCercana` → opción 1 con badge "📍 Tu destino está más cerca que cualquier parada" |
+
+- Tarjeta propia en el modal: **"Caminar hasta el destino"**, `${metros} metros aprox. · Sin esperas`, tiempo real.
+- Al seleccionarla, se traza la **ruta a pie** en el mapa y se muestra un resumen sin paradas ni líneas.
+- El orden final de opciones ya no se re-ordena en el modal: se respeta la prioridad definida al calcular (a pie primero si corresponde).
+
+### Verificación
+- Destino a 56 m: "Ir caminando" **primera** con badge, 4 opciones totales.
+- Destino a 1.25 km: "Ir caminando" como **alternativa** (opción 2).
+- Destino a 6.8 km: **no aparece** caminando.
+- Periferia a 10 km con destino a 2.78 km: caminando **primera** con badge de excepción.
+- Selección de la opción a pie: ruta trazada, resumen correcto, sin errores de consola.
+
+---
+
 ## ✅ Cambio 14 — Arquitectura de precarga por ubicación (`contextoOrigenUsuario`)
 
 ### Tipo de cambio
