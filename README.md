@@ -40,7 +40,7 @@ La APK debug está disponible en la carpeta [`dist/`](./dist/) del repositorio y
 2. Abrir el archivo → permitir "Orígenes desconocidos".
 3. Instalar.
 
-Guía completa: [`GUIA_APK.md`](./GUIA_APK.md).
+Guía completa: [`apk/GUIA_APK.md`](./apk/GUIA_APK.md).
 
 ---
 
@@ -73,10 +73,12 @@ Guía completa: [`GUIA_APK.md`](./GUIA_APK.md).
 ├── datos/                     # JSON de líneas, paradas y horarios
 ├── tiles/osm/                 # Tiles offline (z13–z16)
 ├── vendor/                    # Leaflet, Routing Machine, PolylineDecorator (locales)
-├── scripts/                   # build-www, descargar-tiles, generar-iconos, build-apk
-├── android/                   # Proyecto Capacitor (Android)
+├── tools/                   # build-www, descargar-tiles, generar-iconos, build-apk
+├── apk/
+│   ├── android/               # Proyecto Capacitor (Android)
+│   ├── GUIA_APK.md            # Guía de build e instalación
+│   └── Busya-v15-debug.apk    # APK lista para instalar
 ├── sw.js / manifest.webmanifest
-├── GUIA_APK.md
 └── INFORTE_CAMBIOS_ARQUITECTURA.md
 ```
 
@@ -86,7 +88,7 @@ Guía completa: [`GUIA_APK.md`](./GUIA_APK.md).
 
 ```powershell
 # Servidor estático (Node)
-node scripts/static-server.js . 8800
+node tools/static-server.js . 8800
 # Abrir http://localhost:8800/como_llegar.html
 ```
 
@@ -99,9 +101,9 @@ npm run cap:sync       # sincroniza con Android
 npm run android:apk    # compila el APK debug
 ```
 
-APK en `android/app/build/outputs/apk/debug/app-debug.apk`.
+APK en `apk/android/app/build/outputs/apk/debug/app-debug.apk`.
 
-Guía detallada: [`GUIA_APK.md`](./GUIA_APK.md).
+Guía detallada: [`apk/GUIA_APK.md`](./apk/GUIA_APK.md).
 
 ---
 
@@ -123,7 +125,7 @@ Guía detallada: [`GUIA_APK.md`](./GUIA_APK.md).
 - [`VISION.md`](./VISION.md) — visión del proyecto.
 - [`DIAGRAMA_FLUJO.md`](./DIAGRAMA_FLUJO.md) — flujo de la app.
 - [`INFORTE_CAMBIOS_ARQUITECTURA.md`](./INFORTE_CAMBIOS_ARQUITECTURA.md) — historial de cambios (Cambios 1–18).
-- [`GUIA_APK.md`](./GUIA_APK.md) — guía de APK y offline.
+- [`apk/GUIA_APK.md`](./apk/GUIA_APK.md) — guía de APK y offline.
 
 ---
 

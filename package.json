@@ -4,9 +4,9 @@
   "description": "",
   "main": "prueba.js",
   "scripts": {
-    "build:web": "node scripts/build-www.js",
+    "build:web": "node tools/build-www.js",
     "cap:sync": "npm run build:web && npx cap sync android",
-    "android:apk": "cd android && gradlew.bat assembleDebug",
+    "android:apk": "cd apk/android && gradlew.bat assembleDebug",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

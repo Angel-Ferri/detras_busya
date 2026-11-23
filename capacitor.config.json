@@ -6,6 +6,7 @@
     "androidScheme": "https"
   },
   "android": {
+    "path": "apk/android",
     "allowMixedContent": false
   }
 }

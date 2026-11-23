@@ -13,10 +13,10 @@
 
 ```
 capacitor.config.json     # appId com.busya.app, webDir www
-scripts/build-www.js      # genera www/ (sin analytics/ads)
-scripts/descargar-tiles.js # descarga tiles faltantes de z13-16
-scripts/generar-iconos.ps1 # iconos/splash desde estilos/img/logo.jpeg
-scripts/build-apk.ps1     # compila el APK debug
+tools/build-www.js      # genera www/ (sin analytics/ads)
+tools/descargar-tiles.js # descarga tiles faltantes de z13-16
+tools/generar-iconos.ps1 # iconos/splash desde estilos/img/logo.jpeg
+tools/build-apk.ps1     # compila el APK debug
 script/nativo.js          # adaptador Capacitor (GPS, botón atrás, barra de estado)
 vendor/                   # Leaflet, Routing Machine y PolylineDecorator locales
 sw.js, manifest.webmanifest
@@ -28,21 +28,21 @@ sw.js, manifest.webmanifest
 - JDK 17 (instalado en `C:\Users\Angel\AppData\Local\BusyaBuild\jdk17`)
 - Android SDK en `C:\Users\Angel\AppData\Local\BusyaBuild\Sdk` (platform-tools, android-34, build-tools 34.0.0)
 
-Si se instala en otra máquina, ajustar `JAVA_HOME` y `ANDROID_HOME` en `scripts/build-apk.ps1` y en `android/local.properties`.
+Si se instala en otra máquina, ajustar `JAVA_HOME` y `ANDROID_HOME` en `tools/build-apk.ps1` y en `apk/android/local.properties`.
 
 ## Compilar la APK (debug, instalable)
 
 ```powershell
 npm install
 npm run build:web          # genera www/
-npm run cap:sync           # sincroniza con android/
+npm run cap:sync           # sincroniza con apk/android/
 npm run android:apk        # compila
 ```
 
 La APK queda en:
 
 ```
-android/app/build/outputs/apk/debug/app-debug.apk
+apk/android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
 Copiarla al celular e instalar (habilitar "Orígenes desconocidos" en Ajustes).
@@ -53,7 +53,7 @@ Copiarla al celular e instalar (habilitar "Orígenes desconocidos" en Ajustes).
    ```powershell
    keytool -genkey -v -keystore busya.keystore -alias busya -keyalg RSA -keysize 2048 -validity 10000
    ```
-2. En `android/app/build.gradle`, dentro de `android {}`, agregar:
+2. En `apk/android/app/build.gradle`, dentro de `android {}`, agregar:
    ```gradle
    signingConfigs {
        release {
@@ -71,13 +71,13 @@ Copiarla al celular e instalar (habilitar "Orígenes desconocidos" en Ajustes).
        }
    }
    ```
-3. Copiar `busya.keystore` a `android/app/`.
+3. Copiar `busya.keystore` a `apk/android/app/`.
 4. Compilar:
    ```powershell
    cd android
    .\gradlew.bat assembleRelease
    ```
-   APK en `android/app/build/outputs/apk/release/app-release.apk`.
+   APK en `apk/android/app/build/outputs/apk/release/app-release.apk`.
 
 ## Actualizar datos
 
@@ -88,7 +88,7 @@ Copiarla al celular e instalar (habilitar "Orígenes desconocidos" en Ajustes).
 ## Regenerar tiles offline
 
 ```powershell
-node scripts/descargar-tiles.js
+node tools/descargar-tiles.js
 npm run build:web
 ```
 
@@ -96,7 +96,7 @@ Descarga los tiles faltantes de z13 a z16 para el bounding box de Villa Mercedes
 
 ## Problemas comunes
 
-- **"SDK location not found"**: revisar `android/local.properties` (`sdk.dir=...` con barras dobles o `/`).
+- **"SDK location not found"**: revisar `apk/android/local.properties` (`sdk.dir=...` con barras dobles o `/`).
 - **Gradle no encuentra JDK**: setear `JAVA_HOME` a la carpeta del JDK 17 antes de compilar.
 - **El mapa aparece gris fuera de la ciudad**: la cobertura offline es z13-16 de Villa Mercedes. Fuera de esa zona se necesita conexión.
 - **El botón atrás cierra la app en la web**: el adaptador `script/nativo.js` solo actúa dentro del APK (detecta `window.Capacitor`).

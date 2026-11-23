@@ -12,8 +12,8 @@ Nuevo: app empaquetada con Capacitor 6; datos, líneas, paradas, recorridos, hor
 
 ### Cambios
 - **Capacitor 6** (`capacitor.config.json`, `android/`): appId `com.busya.app`, webDir `www`.
-- **`scripts/build-www.js`**: genera `www/` con HTML/JS/CSS/datos/tiles/vendor, eliminando analytics/ads.
-- **Tiles offline**: descarga z13-16 de Villa Mercedes (1150 tiles, ~11 MB) con `scripts/descargar-tiles.js`.
+- **`tools/build-www.js`**: genera `www/` con HTML/JS/CSS/datos/tiles/vendor, eliminando analytics/ads.
+- **Tiles offline**: descarga z13-16 de Villa Mercedes (1150 tiles, ~11 MB) con `tools/descargar-tiles.js`.
 - **Mapa local**: `inicializarMapa()` usa `tiles/osm/{z}/{x}/{y}.png` (maxNativeZoom 16) con fallback online.
 - **`script/nativo.js`**: geolocalización nativa, botón atrás de Android, barra de estado.
 - **Ruta a pie sin internet**: `trazarRutaAPie()` cae a línea punteada directa si OSRM no responde.
