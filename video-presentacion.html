@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Busya — Presentación</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    background: #0f172a;
+    color: #f8fafc;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .stage {
+    width: 100vw; height: 100vh; max-width: 1920px; max-height: 1080px;
+    aspect-ratio: 16 / 9;
+    position: relative;
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #0ea5e9 100%);
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(0,0,0,0.6);
+  }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 5vh 6vw;
+    opacity: 0; transform: scale(1.04);
+    transition: opacity 0.9s ease, transform 1.2s ease;
+    pointer-events: none;
+  }
+  .slide.active { opacity: 1; transform: scale(1); pointer-events: auto; }
+  .logo { width: 120px; height: 120px; border-radius: 24px; object-fit: cover; margin-bottom: 2vh; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  h1 { font-size: clamp(2rem, 5vw, 4.5rem); font-weight: 800; line-height: 1.1; margin-bottom: 1.5vh; }
+  h2 { font-size: clamp(1.6rem, 3.5vw, 3rem); font-weight: 700; margin-bottom: 2vh; }
+  p  { font-size: clamp(1rem, 2vw, 1.6rem); max-width: 80%; line-height: 1.5; opacity: 0.95; }
+  .subtitle { font-size: clamp(1.1rem, 2.2vw, 1.8rem); opacity: 0.85; margin-top: 1vh; }
+  .screenshot {
+    max-width: 85%; max-height: 60vh;
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    border: 2px solid rgba(255,255,255,0.2);
+    object-fit: contain;
+  }
+  .badge {
+    display: inline-block; padding: 0.4em 0.9em; margin: 0.3em;
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 999px; font-size: clamp(0.9rem, 1.6vw, 1.3rem);
+  }
+  .caption {
+    position: absolute; bottom: 6vh; left: 50%; transform: translateX(-50%);
+    background: rgba(15,23,42,0.75); backdrop-filter: blur(6px);
+    padding: 1vh 2vw; border-radius: 12px; max-width: 88%;
+    font-size: clamp(0.95rem, 1.7vw, 1.4rem); line-height: 1.4;
+  }
+  .controls {
+    position: absolute; bottom: 1.5vh; right: 2vw; display: flex; gap: 0.6em; z-index: 10;
+  }
+  .controls button {
+    background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+    color: white; width: 44px; height: 44px; border-radius: 50%;
+    font-size: 1.1rem; cursor: pointer; backdrop-filter: blur(4px);
+  }
+  .controls button:hover { background: rgba(255,255,255,0.35); }
+  .progress {
+    position: absolute; bottom: 0; left: 0; height: 4px; width: 0%;
+    background: #fbbf24; transition: width 0.3s linear; z-index: 10;
+  }
+  .dots {
+    position: absolute; bottom: 1.5vh; left: 2vw; display: flex; gap: 0.5em; z-index: 10;
+  }
+  .dots span {
+    width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);
+    cursor: pointer; transition: background 0.3s, transform 0.3s;
+  }
+  .dots span.active { background: #fbbf24; transform: scale(1.3); }
+  .slide .emoji { font-size: clamp(3rem, 8vw, 7rem); margin-bottom: 1vh; }
+  .features { display: flex; flex-wrap: wrap; gap: 1.2vw; justify-content: center; margin-top: 2vh; }
+  .feature { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 14px; padding: 1.2vh 1.6vw; width: 30%; min-width: 220px; }
+  .feature b { display: block; font-size: clamp(1rem, 1.8vw, 1.4rem); margin-bottom: 0.4vh; }
+  .feature span { font-size: clamp(0.85rem, 1.4vw, 1.1rem); opacity: 0.9; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+  .float { animation: float 3s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="progress" id="progress"></div>
+
+  <!-- Slide 1 -->
+  <section class="slide active">
+    <img class="logo float" src="estilos/img/logo.jpeg" alt="Busya">
+    <h1>Busya</h1>
+    <p class="subtitle">Transporte público de Villa Mercedes, San Luis</p>
+    <p style="margin-top:2vh; opacity:0.8;">Planificá tu viaje en colectivo de forma simple, rápida y sin internet.</p>
+    <div style="margin-top:3vh;">
+      <span class="badge">🗺️ Mapa interactivo</span>
+      <span class="badge">🧭 Mejor ruta</span>
+      <span class="badge">🚶 Ir caminando</span>
+      <span class="badge">📱 APK + PWA</span>
+    </div>
+    <div class="caption">Busya: tu compañero de viaje en Villa Mercedes.</div>
+  </section>
+
+  <!-- Slide 2 -->
+  <section class="slide">
+    <div class="emoji">🤔</div>
+    <h2>El problema</h2>
+    <p>Saber qué colectivo tomar, en qué parada subir y cuándo llega puede ser confuso, sobre todo si estás lejos del centro o sin conexión.</p>
+    <div class="caption">Busya resuelve eso con datos locales y sin depender de internet.</div>
+  </section>
+
+  <!-- Slide 3 -->
+  <section class="slide">
+    <div class="emoji">💡</div>
+    <h2>La solución</h2>
+    <p>Una app que combina <b>líneas, paradas, recorridos y horarios</b> con un planificador que calcula la mejor ruta, directa o con transbordo.</p>
+    <div class="features">
+      <div class="feature"><b>4 líneas</b><span>A, E, Zona Este, Zona Oeste</span></div>
+      <div class="feature"><b>325 paradas</b><span>Con coordenadas reales</span></div>
+      <div class="feature"><b>Horarios</b><span>L-V, sábado, domingo y feriados</span></div>
+    </div>
+    <div class="caption">Todo funciona con los datos guardados en el dispositivo.</div>
+  </section>
+
+  <!-- Slide 4 -->
+  <section class="slide">
+    <div class="emoji">🧭</div>
+    <h2>¿Cómo funciona?</h2>
+    <p>1️⃣ Buscá tu destino · 2️⃣ Elegí una de las 4 mejores opciones · 3️⃣ Seguí las instrucciones en el mapa.</p>
+    <div class="caption">El planificador compara tiempo, caminata y transbordos para elegir la mejor.</div>
+  </section>
+
+  <!-- Slide 5 -->
+  <section class="slide">
+    <h2>Menú principal</h2>
+    <img class="screenshot" src="media/01-menu.png" alt="Menú principal">
+    <div class="caption">Acceso rápido a Cómo llegar, líneas, paradas y panel.</div>
+  </section>
+
+  <!-- Slide 6 -->
+  <section class="slide">
+    <h2>Planificador de viajes</h2>
+    <img class="screenshot" src="media/02-planificador.png" alt="Planificador">
+    <div class="caption">Buscá un lugar o parada y obtené las mejores rutas.</div>
+  </section>
+
+  <!-- Slide 7 -->
+  <section class="slide">
+    <h2>Opciones y "Ir caminando"</h2>
+    <img class="screenshot" src="media/03-opciones-caminando.png" alt="Opciones">
+    <div class="caption">Si el destino está cerca, caminar es la opción principal. El colectivo queda como alternativa.</div>
+  </section>
+
+  <!-- Slide 8 -->
+  <section class="slide">
+    <div class="emoji">🚶</div>
+    <h2>Reglas de la opción caminando</h2>
+    <div class="features">
+      <div class="feature"><b>≤ 800 m</b><span>Prioridad máxima (más rápido que esperar el bus)</span></div>
+      <div class="feature"><b>800 m – 2 km</b><span>Solo si el colectivo no ahorra tiempo real</span></div>
+      <div class="feature"><b>> 2 km</b><span>Oculta, salvo en periferia si el destino está más cerca que la parada</span></div>
+    </div>
+    <div class="caption">Distancia real estimada ×1.25 · 12 min por km.</div>
+  </section>
+
+  <!-- Slide 9 -->
+  <section class="slide">
+    <div class="emoji">📡</div>
+    <h2>Funciona sin internet</h2>
+    <p>APK y PWA empaquetan líneas, paradas, recorridos, horarios y el mapa de Villa Mercedes (zoom 13–16).</p>
+    <div class="features">
+      <div class="feature"><b>APK Android</b><span>Instalable, datos incluidos</span></div>
+      <div class="feature"><b>PWA web</b><span>Offline tras la primera visita</span></div>
+      <div class="feature"><b>Búsqueda offline</b><span>1893 locales + caché de direcciones</span></div>
+    </div>
+    <div class="caption">Ideal para zonas con mala conexión.</div>
+  </section>
+
+  <!-- Slide 10 -->
+  <section class="slide">
+    <div class="emoji">📍</div>
+    <h2>Pensado para todos</h2>
+    <p>Detecta si estás en zona urbana, periferia o muy alejada y sugiere las 3 paradas de acceso más cercanas.</p>
+    <p style="margin-top:1.5vh;">Incluye pase estudiantil con estado por día y horarios de feriados.</p>
+    <div class="caption">Busya se adapta a tu ubicación.</div>
+  </section>
+
+  <!-- Slide 11 -->
+  <section class="slide">
+    <img class="logo float" src="estilos/img/logo.jpeg" alt="Busya">
+    <h1>¡Probalo!</h1>
+    <p>Web: angel-ferri.github.io/detras_busya</p>
+    <p style="margin-top:1vh;">APK: en el repositorio (carpeta apk/)</p>
+    <div style="margin-top:3vh;">
+      <span class="badge">github.com/Angel-Ferri/detras_busya</span>
+    </div>
+    <div class="caption">Busya — tu compañero de viaje en Villa Mercedes. 🚌</div>
+  </section>
+
+  <div class="dots" id="dots"></div>
+  <div class="controls">
+    <button id="prev" title="Anterior">◀</button>
+    <button id="play" title="Reproducir/Pausar">⏸</button>
+    <button id="next" title="Siguiente">▶</button>
+  </div>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dotsBox = document.getElementById('dots');
+  const progress = document.getElementById('progress');
+  const playBtn = document.getElementById('play');
+  let i = 0, playing = true, timer = null, start = Date.now();
+  const DURATION = 6500;
+
+  slides.forEach((_, idx) => {
+    const d = document.createElement('span');
+    d.addEventListener('click', () => go(idx));
+    dotsBox.appendChild(d);
+  });
+  const dots = Array.from(dotsBox.querySelectorAll('span'));
+
+  function render() {
+    slides.forEach((s, idx) => s.classList.toggle('active', idx === i));
+    dots.forEach((d, idx) => d.classList.toggle('active', idx === i));
+    start = Date.now();
+    updateProgress();
+  }
+  function go(n) { i = (n + slides.length) % slides.length; render(); restartTimer(); }
+  function next() { go(i + 1); }
+  function prev() { go(i - 1); }
+  function updateProgress() {
+    const pct = ((Date.now() - start) / DURATION) * 100;
+    progress.style.width = Math.min(100, pct) + '%';
+  }
+  function tick() {
+    if (playing) {
+      updateProgress();
+      if (Date.now() - start >= DURATION) next();
+    }
+    requestAnimationFrame(tick);
+  }
+  function restartTimer() { start = Date.now(); }
+  function togglePlay() {
+    playing = !playing;
+    playBtn.textContent = playing ? '⏸' : '▶';
+    if (playing) start = Date.now();
+  }
+
+  document.getElementById('next').addEventListener('click', next);
+  document.getElementById('prev').addEventListener('click', prev);
+  playBtn.addEventListener('click', togglePlay);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft') prev();
+    if (e.key === 'p') togglePlay();
+  });
+
+  render();
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>
+EOF
