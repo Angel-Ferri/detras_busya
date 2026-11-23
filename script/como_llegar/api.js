@@ -45,6 +45,18 @@ const RESPALDO_LOCAL = {
  */
 const ARCHIVO_PARADAS_MANUALES = 'datos/paradas_manuales.json';
 
+/**
+ * Versión de los datos locales. Cambiarla cuando se actualicen los JSON
+ * fuerza al navegador a pedir la versión nueva (el APK los trae empaquetados).
+ */
+const DATA_VERSION = '15';
+
+/** Agrega la versión a una ruta local para que el navegador la guarde en caché. */
+function urlDatosLocal(ruta) {
+    if (typeof window !== 'undefined' && window.Capacitor) return ruta;
+    return ruta + (ruta.includes('?') ? '&' : '?') + 'v=' + DATA_VERSION;
+}
+
 /** Lugares de referencia que publica la API (escuelas, ICA, etc.). */
 let lugaresDeReferencia = [];
 
@@ -69,7 +81,7 @@ async function pedirJSON(ruta) {
  * Pide un JSON local (usado solo como respaldo).
  */
 async function pedirJSONLocal(ruta) {
-    const respuesta = await fetch(ruta, { cache: 'no-store' });
+    const respuesta = await fetch(urlDatosLocal(ruta), { cache: 'force-cache' });
     if (!respuesta.ok) throw new Error('No se pudo leer ' + ruta);
     return respuesta.json();
 }
@@ -347,7 +359,7 @@ async function cargarLugaresDeReferencia() {
     
     // Agregar comercios desde archivo unificado
     try {
-        const respComercios = await fetch('datos/datos-unificados.json');
+        const respComercios = await fetch(urlDatosLocal('datos/datos-unificados.json'), { cache: 'force-cache' });
         if (respComercios.ok) {
             const datosUnif = await respComercios.json();
             const comercios = datosUnif.comercios || [];
@@ -364,7 +376,26 @@ async function cargarLugaresDeReferencia() {
                     });
                 }
             }
-            console.log(`✅ ${comercios.length} comercios agregados al buscador inteligente`);
+
+            // Lugares de referencia propios del archivo unificado (escuelas, ICA, etc.).
+            const referencias = datosUnif.lugares_de_referencia || [];
+            for (const r of referencias) {
+                const coords = r.coordenadas || {};
+                const lat = r.lat !== undefined ? r.lat : coords.lat;
+                const lng = r.lng !== undefined ? r.lng : coords.lng;
+                if (!r.nombre || !Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) continue;
+                lugaresDeReferencia.push({
+                    nombre: r.nombre,
+                    descripcion: r.descripcion || r.nombre,
+                    lat: Number(lat),
+                    lng: Number(lng),
+                    coordenadas: { lat: Number(lat), lng: Number(lng) },
+                    tipo: 'referencia',
+                    categoria: 'Lugar de referencia'
+                });
+            }
+
+            console.log(`✅ ${comercios.length} comercios y ${referencias.length} lugares agregados al buscador inteligente`);
         }
     } catch (e) {
         console.warn('No se pudieron cargar comercios unificados:', e.message);

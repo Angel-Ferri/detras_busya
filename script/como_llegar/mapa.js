@@ -21,12 +21,28 @@ function volverAlInicio() {
  */
 function inicializarMapa() {
     mapa = L.map('map-principal', { maxZoom: 19 }).setView([-33.675, -65.46], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+
+    // 1) Fondo online (solo si hay conexion). Queda debajo del mapa local.
+    if (navigator.onLine !== false) {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap',
+            maxZoom: 19,
+            errorTileUrl: TILE_TRANSPARENTE
+        }).addTo(mapa);
+    }
+
+    // 2) Mapa local empaquetado en el APK: cubre Villa Mercedes hasta z16.
+    //    maxNativeZoom 16 hace que Leaflet agrande esos tiles para z17-19.
+    L.tileLayer('tiles/osm/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap',
         maxZoom: 19,
-        maxNativeZoom: 19
+        maxNativeZoom: 16,
+        errorTileUrl: TILE_TRANSPARENTE
     }).addTo(mapa);
 }
+
+/** Pixel transparente: deja ver el fondo online en los huecos del mapa local. */
+const TILE_TRANSPARENTE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
 /** Ubicación por defecto (centro de Villa Mercedes) si el GPS falla. */
 const UBICACION_POR_DEFECTO = { lat: -33.67451974632388, lng: -65.46229376889399 };
@@ -271,8 +287,44 @@ function dibujarTramoColectivo(recorrido, origenParada, destinoParada, estilos =
  * Traza la ruta a pie con el servidor público de OSRM (perfil peatonal).
  */
 
+/**
+ * Respaldo sin internet: une origen y destino con una linea punteada.
+ */
+function dibujarRutaPieRecta(desde, hasta) {
+    if (routingControlPie) {
+        try { mapa.removeControl(routingControlPie); } catch (e) { /* ya estaba fuera */ }
+        routingControlPie = null;
+    }
+    if (rutaPieRecta) {
+        mapa.removeLayer(rutaPieRecta);
+        rutaPieRecta = null;
+    }
+    rutaPieRecta = L.polyline([
+        [desde.lat, desde.lng],
+        [hasta[0], hasta[1]]
+    ], {
+        color: '#8b5cf6',
+        weight: 6,
+        dashArray: '8, 8',
+        opacity: 0.9
+    }).addTo(mapa);
+}
+
 function trazarRutaAPie(desde, hasta) {
-    if (routingControlPie) mapa.removeControl(routingControlPie);
+    if (routingControlPie) {
+        try { mapa.removeControl(routingControlPie); } catch (e) { /* nada */ }
+        routingControlPie = null;
+    }
+    if (rutaPieRecta) {
+        mapa.removeLayer(rutaPieRecta);
+        rutaPieRecta = null;
+    }
+
+    // Sin internet no se puede consultar OSRM: se dibuja la linea directa.
+    if (navigator.onLine === false) {
+        dibujarRutaPieRecta(desde, hasta);
+        return;
+    }
 
     routingControlPie = L.Routing.control({
         waypoints: [
@@ -293,6 +345,23 @@ function trazarRutaAPie(desde, hasta) {
             styles: [{ color: '#8b5cf6', weight: 6, dashArray: '8, 8', opacity: 0.9 }]
         }
     }).addTo(mapa);
+
+    // Si OSRM no responde (sin internet o servidor caido), se usa la linea directa.
+    let resuelto = false;
+    let temporizador = null;
+    const usarRespaldo = () => {
+        if (resuelto) return;
+        resuelto = true;
+        if (temporizador) clearTimeout(temporizador);
+        dibujarRutaPieRecta(desde, hasta);
+    };
+
+    routingControlPie.on('routesfound', () => {
+        resuelto = true;
+        if (temporizador) clearTimeout(temporizador);
+    });
+    routingControlPie.on('routingerror', usarRespaldo);
+    temporizador = setTimeout(usarRespaldo, 6000);
 }
 
 /**
@@ -325,6 +394,8 @@ function limpiarMapa() {
         mapa.removeControl(routingControlPie);
         routingControlPie = null;
     }
+
+    if (rutaPieRecta) { mapa.removeLayer(rutaPieRecta); rutaPieRecta = null; }
 
     if (marcadorOrigenSugerido) { mapa.removeLayer(marcadorOrigenSugerido); marcadorOrigenSugerido = null; }
     if (marcadorDestinoSeleccionado) { mapa.removeLayer(marcadorDestinoSeleccionado); marcadorDestinoSeleccionado = null; }

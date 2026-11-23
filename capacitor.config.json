@@ -1,0 +1,11 @@
+{
+  "appId": "com.busya.app",
+  "appName": "Busya",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

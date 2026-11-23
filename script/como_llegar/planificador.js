@@ -159,12 +159,100 @@ function ejecutarBusquedaEnTiempoReal() {
  * Busca paradas de las 4 líneas (con tolerancia a errores de tipeo),
  * lugares de referencia de la API y direcciones en OpenStreetMap.
  */
+﻿const CACHE_BUSQUEDAS_KEY = 'busya_busquedas_v1';
+const CACHE_BUSQUEDAS_MAX = 80;
+const CACHE_BUSQUEDAS_TTL = 30 * 24 * 60 * 60 * 1000;
+
+function leerCacheBusquedasRaw() {
+    try {
+        const raw = localStorage.getItem(CACHE_BUSQUEDAS_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+}
+
+function leerCacheBusquedas() {
+    const raw = leerCacheBusquedasRaw();
+    const ahora = Date.now();
+    const salida = {};
+    for (const k in raw) {
+        if (raw[k] && raw[k].t && (ahora - raw[k].t) < CACHE_BUSQUEDAS_TTL) {
+            salida[k] = raw[k].r;
+        }
+    }
+    return salida;
+}
+
+function guardarCacheBusquedas(consulta, resultados) {
+    try {
+        const cache = leerCacheBusquedasRaw();
+        const clave = normalizarTexto(consulta);
+        cache[clave] = { t: Date.now(), r: resultados };
+        const claves = Object.keys(cache);
+        if (claves.length > CACHE_BUSQUEDAS_MAX) {
+            claves.sort((a, b) => (cache[a].t || 0) - (cache[b].t || 0));
+            const aBorrar = claves.length - CACHE_BUSQUEDAS_MAX;
+            for (let i = 0; i < aBorrar; i++) delete cache[claves[i]];
+        }
+        localStorage.setItem(CACHE_BUSQUEDAS_KEY, JSON.stringify(cache));
+    } catch (e) { /* localStorage lleno o bloqueado: se ignora */ }
+}
+
+function buscarLugaresLocales(termino) {
+    if (typeof lugaresDeReferencia === 'undefined' || !Array.isArray(lugaresDeReferencia)) return [];
+    const norm = normalizarTexto(termino);
+    if (norm.length < 2) return [];
+    const vistos = new Set();
+    const out = [];
+    for (const l of lugaresDeReferencia) {
+        if (!l || l.lat == null || l.lng == null) continue;
+        const texto = normalizarTexto([l.nombre, l.descripcion, l.categoria].filter(Boolean).join(' '));
+        if (!texto.includes(norm)) continue;
+        const clave = normalizarTexto(l.nombre) + '|' + Number(l.lat).toFixed(4) + ',' + Number(l.lng).toFixed(4);
+        if (vistos.has(clave)) continue;
+        vistos.add(clave);
+        out.push(l);
+        if (out.length >= 12) break;
+    }
+    out.sort((a, b) => {
+        const an = normalizarTexto(a.nombre), bn = normalizarTexto(b.nombre);
+        const ap = an.startsWith(norm) ? 0 : 1;
+        const bp = bn.startsWith(norm) ? 0 : 1;
+        if (ap !== bp) return ap - bp;
+        return an.length - bn.length;
+    });
+    return out.slice(0, 6);
+}
+
+async function buscarDireccionesOnline(termino) {
+    const clave = normalizarTexto(termino);
+    const cache = leerCacheBusquedas();
+    if (cache[clave]) return cache[clave];
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return [];
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    try {
+        const queryFormateada = encodeURIComponent(termino + ', Villa Mercedes, San Luis');
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${queryFormateada}&countrycodes=ar&limit=5`;
+        const response = await fetch(url, { signal: controller.signal });
+        if (!response.ok) return [];
+        const data = await response.json();
+        guardarCacheBusquedas(termino, data);
+        return data;
+    } catch (e) {
+        console.warn('Busya: direcciones no disponibles:', e.message);
+        return [];
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+
 async function ejecutarBusqueda() {
     const terminoInput = document.getElementById('buscador-lugares').value.trim();
     const contenedorResultados = document.getElementById('resultados-busqueda');
     if (!terminoInput) { contenedorResultados.innerHTML = ''; return; }
 
-    // --- Paradas de las líneas ---
+    // --- Paradas de las lineas ---
     const paradasEncontradas = [];
     for (const keyLinea in datosLineasCargados) {
         const linea = datosLineasCargados[keyLinea];
@@ -177,15 +265,18 @@ async function ejecutarBusqueda() {
         });
     }
 
+    // --- Locales guardados (funciona sin internet) ---
+    const localesEncontrados = buscarLugaresLocales(terminoInput);
+
     // --- Direcciones (OpenStreetMap / Nominatim) ---
+    const sinConexion = (typeof navigator !== 'undefined' && navigator.onLine === false);
     let lugaresEncontrados = [];
-    try {
-        const queryFormateada = encodeURIComponent(terminoInput + ', Villa Mercedes, San Luis');
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${queryFormateada}&countrycodes=ar&limit=5`;
-        const response = await fetch(url);
-        lugaresEncontrados = await response.json();
-    } catch (e) {
-        console.error('Error Nominatim:', e);
+    if (!sinConexion) {
+        lugaresEncontrados = await buscarDireccionesOnline(terminoInput);
+    } else {
+        const cache = leerCacheBusquedas();
+        const clave = normalizarTexto(terminoInput);
+        if (cache[clave]) lugaresEncontrados = cache[clave];
     }
 
     contenedorResultados.innerHTML = '';
@@ -193,7 +284,7 @@ async function ejecutarBusqueda() {
     // --- Resultados: paradas ---
     if (paradasEncontradas.length > 0) {
         const titulo = document.createElement('li');
-        titulo.innerHTML = '<strong style="display:block; padding: 5px 10px; background:#f1f5f9; color:#475569; font-size: 0.8rem;">🚏 PARADAS SUGERIDAS</strong>';
+        titulo.innerHTML = '<strong style="display:block; padding: 5px 10px; background:#f1f5f9; color:#475569; font-size: 0.8rem;">PARADAS SUGERIDAS</strong>';
         contenedorResultados.appendChild(titulo);
 
         paradasEncontradas.slice(0, 4).forEach(item => {
@@ -201,9 +292,8 @@ async function ejecutarBusqueda() {
             li.style = 'padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display:flex; flex-direction:column; background: white;';
             li.onmouseover = () => li.style.background = '#f8fafc';
             li.onmouseout = () => li.style.background = 'white';
-            li.innerHTML = `<span><b>${item.parada.nombre}</b></span><small style="color:#2563eb;">Línea sugerida: ${item.nombreLinea}</small>`;
-            
-            // 🔥 SOLUCIÓN AL CONGELAMIENTO: Muestra el cartel, pausa 150ms para que se dibuje, y luego calcula
+            li.innerHTML = `<span><b>${item.parada.nombre}</b></span><small style="color:#2563eb;">Linea sugerida: ${item.nombreLinea}</small>`;
+
             li.onclick = () => {
                 mostrarCargandoViaje('Calculando la mejor ruta...');
                 setTimeout(() => {
@@ -211,15 +301,40 @@ async function ejecutarBusqueda() {
                     cerrarCargandoViaje();
                 }, 50);
             };
-            
+
             contenedorResultados.appendChild(li);
         });
     }
 
-    // --- Resultados: direcciones / búsqueda por dirección ---
+    // --- Resultados: locales guardados ---
+    if (localesEncontrados.length > 0) {
+        const tituloLocales = document.createElement('li');
+        tituloLocales.innerHTML = '<strong style="display:block; padding: 5px 10px; background:#f1f5f9; color:#475569; font-size: 0.8rem;">LOCALES Y LUGARES</strong>';
+        contenedorResultados.appendChild(tituloLocales);
+
+        localesEncontrados.forEach(lugar => {
+            const li = document.createElement('li');
+            li.style = 'padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; background: white;';
+            li.onmouseover = () => li.style.background = '#f8fafc';
+            li.onmouseout = () => li.style.background = 'white';
+            li.innerHTML = `<b>${lugar.nombre}</b> <br><small style="color:#64748b;">${lugar.descripcion || lugar.categoria || 'Villa Mercedes'}</small>`;
+
+            li.onclick = () => {
+                mostrarCargandoViaje('Calculando la mejor ruta...');
+                setTimeout(() => {
+                    encontrarViajeMasOptimo(Number(lugar.lat), Number(lugar.lng), lugar.nombre);
+                    cerrarCargandoViaje();
+                }, 50);
+            };
+
+            contenedorResultados.appendChild(li);
+        });
+    }
+
+    // --- Resultados: direcciones (internet) ---
     if (lugaresEncontrados.length > 0) {
         const tituloLugares = document.createElement('li');
-        tituloLugares.innerHTML = '<strong style="display:block; padding: 5px 10px; background:#f1f5f9; color:#475569; font-size: 0.8rem;">📍 LOCALES Y DIRECCIONES</strong>';
+        tituloLugares.innerHTML = '<strong style="display:block; padding: 5px 10px; background:#f1f5f9; color:#475569; font-size: 0.8rem;">DIRECCIONES</strong>';
         contenedorResultados.appendChild(tituloLugares);
 
         lugaresEncontrados.forEach(lugar => {
@@ -242,8 +357,7 @@ async function ejecutarBusqueda() {
             li.onmouseout = () => li.style.background = 'white';
 
             li.innerHTML = `<b>${nombreFormateado}</b> <br><small style="color:#64748b;">${descripcion || 'Villa Mercedes'}</small>`;
-            
-            // 🔥 SOLUCIÓN AL CONGELAMIENTO
+
             li.onclick = () => {
                 mostrarCargandoViaje('Calculando la mejor ruta...');
                 setTimeout(() => {
@@ -251,19 +365,22 @@ async function ejecutarBusqueda() {
                     cerrarCargandoViaje();
                 }, 50);
             };
-            
+
             contenedorResultados.appendChild(li);
         });
     }
 
-    if (paradasEncontradas.length === 0 && lugaresEncontrados.length === 0) {
+    if (paradasEncontradas.length === 0 && localesEncontrados.length === 0 && lugaresEncontrados.length === 0) {
         contenedorResultados.innerHTML = '<li style="padding: 10px; color: #ef4444;">No encontramos coincidencias.</li>';
+    } else if (sinConexion) {
+        const aviso = document.createElement('li');
+        aviso.style = 'padding: 6px 10px; color: #9a3412; background:#fff7ed; font-size: 0.78rem;';
+        aviso.textContent = 'Sin conexion: mostrando paradas, locales y lugares guardados.';
+        contenedorResultados.appendChild(aviso);
     }
 }
 
-/**
- * El usuario tocó una parada del buscador: se la deja como destino.
- */
+
 function seleccionarDestinoDesdeBuscador(lineaKey, paradaIndex, parada, limpiarInput) {
     if (limpiarInput) {
         document.getElementById('resultados-busqueda').innerHTML = '';

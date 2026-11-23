@@ -1,0 +1,13 @@
+{
+  "name": "Busya - Planifica tu viaje",
+  "short_name": "Busya",
+  "description": "Colectivos de Villa Mercedes: líneas, paradas, horarios y cómo llegar.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#2563eb",
+  "theme_color": "#2563eb",
+  "icons": [
+    { "src": "estilos/img/logo.jpeg", "sizes": "1600x1600", "type": "image/jpeg", "purpose": "any maskable" }
+  ]
+}

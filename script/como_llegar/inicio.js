@@ -30,9 +30,25 @@ function inicializarBotonRastreo() {
 }
 
 /**
+ * Muestra un aviso fijo cuando el dispositivo no tiene conexión.
+ */
+function actualizarIndicadorOffline() {
+    const aviso = document.getElementById('aviso-offline');
+    if (!aviso) return;
+    const sinConexion = (typeof navigator !== 'undefined' && navigator.onLine === false);
+    aviso.style.display = sinConexion ? 'block' : 'none';
+    if (sinConexion) document.body.classList.add('modo-offline');
+    else document.body.classList.remove('modo-offline');
+}
+
+/**
  * Arranque de la página.
  */
 document.addEventListener('DOMContentLoaded', async () => {
+    actualizarIndicadorOffline();
+    window.addEventListener('online', actualizarIndicadorOffline);
+    window.addEventListener('offline', actualizarIndicadorOffline);
+
     // 1. El mapa.
     inicializarMapa();
 

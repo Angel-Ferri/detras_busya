@@ -60,6 +60,9 @@ let circuloUsuario = null;
 /** Control de ruteo a pie (Leaflet Routing Machine). */
 let routingControlPie = null;
 
+/** Línea punteada de respaldo cuando no hay internet para calcular la ruta a pie. */
+let rutaPieRecta = null;
+
 /** Polilínea del recorrido completo de la línea elegida. */
 let lineaPolyline = null;
 
