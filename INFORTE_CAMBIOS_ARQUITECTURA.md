@@ -103,6 +103,45 @@ Optimización de selección de paradas / eficiencia del viaje.
 
 ---
 
+## ✅ Cambio 13 — Mejoras de modelo de costos, lógica y rendimiento (según feedback)
+
+### Tipo de cambio
+Refactor mayor: modelo de costos, lógica de selección y optimización de FASE 3.
+
+### Backup previo
+Rama/tag `backup-antes-cambios` + copia física `detras_busya v15 (backup)`.
+
+### 1. Modelo de costos (UX del pasajero)
+- **Penalización por transbordo:** `PENALIZACION_TRANSBORDO = 8` min virtuales (espera del segundo colectivo). Evita transbordos absurdos.
+- **Factor de incomodidad al caminar:** `PENALIZACION_CAMINATA = 1.4` aplicado solo al **ranking** (el tiempo mostrado al usuario sigue siendo real, sin multiplicar).
+- **Límite de caminata final:** `LIMITE_CAMINATA_FINAL = 1.5 km` para directos y transbordos. Los directos absolutos (fallback) no tienen límite.
+- Se separa `tiempoReal` (mostrado) de `puntajeRanking` (usado para ordenar/seleccionar).
+
+### 2. Mejoras lógicas
+- **FASE 1:** bucle redundante (4 pasadas) reemplazado por un solo recorrido filtrando `distCamina <= 2.0`. Resultado idéntico en 1/4 del tiempo.
+- **Líneas circulares/ida-vuelta:** helper `esAdelanteEnRecorrido` con wrap-around (origen en último cuarto + destino en primer cuarto).
+- **Directos absolutos:** en vez de fijar solo la parada más cercana al destino, se evalúan las **3 paradas más cercanas** y se queda con el par `(origen, destino)` de menor costo total.
+- **Ordenamiento final:** se re-ordena por `puntajeRanking` tras agregar los absolutos (antes la opción 3 podía tener menor tiempo que la 2).
+- **Etiquetas en el modal:** badge "⭐ Recomendada" para la opción 1, y etiqueta de categoría ("Directo", "Transbordo", "Menor caminata").
+
+### 3. Optimización de rendimiento (FASE 3)
+- **Precalcular proyecciones:** `p.proySeg` se calcula una vez al cargar datos en `api.js` (en `cargarRecorridos`), fuera del cálculo de viajes.
+- **Matriz de transbordos precalculada:** `window.transbordosValidos[L1][L2]` se calcula una sola vez al iniciar la app (pares de paradas a ≤ 400 m). FASE 3 pasa de O(N⁴) a consulta de matriz → casi instantánea.
+- **Caché de proyecciones (WeakMap)** y **caché de resultados por destino** se mantienen.
+
+### Impacto en funcionamiento
+- **Transbordos absurdos eliminados:** la penalización de 8 min evita que aparezcan transbordos que "ahorran" 2 min en papel.
+- **Preferencia por viajar sentado:** el factor 1.4 hace que el algoritmo prefiera 3 min más de colectivo antes que caminar 400 m extra.
+- **Sin caminatas finales excesivas:** límite de 1.5 km (excepto fallback directos absolutos).
+- **FASE 3 ~instantánea:** gracias a la matriz precalculada.
+- **Cálculo más limpio:** un solo recorrido en FASE 1, wrap-around para circulares, top-3 destinos en absolutos.
+
+### Verificación
+- `node --check` en los 27 archivos JS: CHECK_COMPLETO, sin fallos.
+- Probado en navegador: 4 opciones con badges, sin errores de JS, consola limpia.
+
+---
+
 ## ✅ Cambio 12 — Restauración de 4 opciones de viaje (`script/como_llegar/planificador.js`)
 
 ### Tipo de cambio

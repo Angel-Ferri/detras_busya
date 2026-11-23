@@ -182,6 +182,38 @@ async function cargarRecorridos() {
         // correcciones de coordenadas se vean también en el planificador.
         await aplicarParadasManuales();
 
+        // Precalcular proyección de cada parada sobre su recorrido (optimización).
+        for (const key of Object.keys(datosLineasCargados)) {
+            const linea = datosLineasCargados[key];
+            linea.paradas.forEach(p => {
+                if (p.proySeg === undefined) {
+                    p.proySeg = obtenerProyeccionEnRecorrido(linea.recorrido, [p.lat, p.lng]).indiceSegmento;
+                }
+            });
+        }
+
+        // Precalcular matriz de transbordos (pares de paradas a <= 400 m entre líneas)
+        // para que FASE 3 sea instantánea.
+        window.transbordosValidos = window.transbordosValidos || {};
+        for (const keyL1 in datosLineasCargados) {
+            if (!window.transbordosValidos[keyL1]) window.transbordosValidos[keyL1] = {};
+            const L1 = datosLineasCargados[keyL1];
+            for (const keyL2 in datosLineasCargados) {
+                if (keyL1 === keyL2) continue;
+                const L2 = datosLineasCargados[keyL2];
+                const pares = [];
+                L1.paradas.forEach((pB, idxB) => {
+                    L2.paradas.forEach((pS, idxS) => {
+                        const dist = calcularDistancia([pB.lat, pB.lng], [pS.lat, pS.lng]);
+                        if (dist <= 0.4) {
+                            pares.push({ idxBajadaL1: idxB, idxSubidaL2: idxS, distEscala: dist });
+                        }
+                    });
+                });
+                window.transbordosValidos[keyL1][keyL2] = pares;
+            }
+        }
+
         // Los datos locales son ahora la fuente prevista (sin API): no se avisa.
         origenDeDatos = 'api';
         return Object.keys(datosLineasCargados).length > 0;
