@@ -1,5 +1,5 @@
 // --- CONFIGURACIÓN & ESTADO DE LA APLICACIÓN ---
-const HASH_ACCESO_CHOFER = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"; 
+// HASH_ACCESO_CHOFER se define en panel/chofer.js (cargado antes). No redeclarar acá.
 
 let demoDatos = null;
 

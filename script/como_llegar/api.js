@@ -191,22 +191,6 @@ async function cargarRecorridos() {
     }
 }
 
-async function cargarLugaresDeReferencia() {
-    try {
-        const respuesta = await pedirJSON('/api/lugares');
-        lugaresDeReferencia = (respuesta.lugares || []).map(l => ({
-            nombre: l.nombre,
-            descripcion: l.descripcion || l.nombre,
-            lat: l.coordenadas.lat,
-            lng: l.coordenadas.lng
-        }));
-    } catch (e) {
-        console.warn('No se pudieron cargar los lugares de la API:', e.message);
-        lugaresDeReferencia = [];
-    }
-    // Comercios eliminados
-}
-
 /**
  * Respaldo: lee las líneas de la carpeta datos/ del proyecto.
  */

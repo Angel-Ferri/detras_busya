@@ -103,6 +103,23 @@ Optimización de selección de paradas / eficiencia del viaje.
 
 ---
 
+## ✅ Cambio 12 — Restauración de 4 opciones de viaje (`script/como_llegar/planificador.js`)
+
+### Tipo de cambio
+Ajuste de UX (reversión parcial del Cambio 9).
+
+### Antes
+- Se mostraban hasta **3 opciones** de viaje (Cambio 9).
+
+### Ahora
+- Se vuelven a mostrar hasta **4 opciones** de viaje (límite de agregado, contador y render del modal).
+
+### Nota
+- El radio de búsqueda de paradas se mantiene en **2.0 km** (Cambio 9) para no perder la optimización de carga.
+- El cálculo y el ordenamiento por menor tiempo total se mantienen intactos.
+
+---
+
 ## ✅ Cambio 11 — Optimización: memoización de proyecciones + caché de resultados por destino (`utilidades.js` + `planificador.js`)
 
 ### Tipo de cambio

@@ -681,7 +681,7 @@ function encontrarViajeMasOptimo(latDestino, lngDestino, nombreLugar) {
         );
         
         // Solo agrega si no existe, limitando el total del modal a 4 opciones máximo
-        if (!yaExiste && opcionesViajeActuales.length < 3) {
+        if (!yaExiste && opcionesViajeActuales.length < 4) {
             opcionesViajeActuales.push(directo);
         }
     }
@@ -782,10 +782,10 @@ function mostrarListaDeOpciones() {
     // Ordenamos las opciones del modal por tiempo total ascendente (viaje más eficiente primero)
     opcionesViajeActuales.sort((a, b) => (a.tiempoEstimado || 0) - (b.tiempoEstimado || 0) || (a.metrosDestino || 0) - (b.metrosDestino || 0));
 
-    const cantidadOpciones = Math.min(opcionesViajeActuales.length, 3);
+    const cantidadOpciones = Math.min(opcionesViajeActuales.length, 4);
     let htmlOpciones = `<h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #1e293b; text-align: center;">🚌 ${cantidadOpciones} opciones para ir a:<br><span style="color: #2563eb;">${infoDestinoActual.nombre}</span></h3>`;
     
-    opcionesViajeActuales.slice(0, 3).forEach((opcion, index) => {
+    opcionesViajeActuales.slice(0, 4).forEach((opcion, index) => {
         if (opcion.tipo === 'directo') {
             htmlOpciones += `
                 <button onclick="seleccionarOpcionViaje(${index})" style="width: 100%; text-align: left; padding: 12px; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; cursor: pointer;">
