@@ -5,7 +5,23 @@ Alcance: Evaluación de eficiencia → limpieza/arquitectura inicial.
 
 ---
 
-## ✅ Cambio 15 — Opción "Ir caminando" con reglas de decisión
+## ✅ Cambio 19 — Mejoras en paradas y horarios (interpolación, medianoche, GPS, UX)
+
+### Tipo de cambio
+Mejora: unificación del motor de horarios y UX de la página de paradas.
+
+### Cambios
+- **`script/motorHorarios.js`** (nuevo): motor compartido con `distanciaKm`, `distanciaAcumulada` (traza o línea recta), `calcularMinutosRestantes` (cruce de medianoche), `calcularHorariosEstimados` (interpolación por distancia), caché por `(lineaKey, tipoDia)`.
+- **`paradas.js`**: `calcularHorariosEstimados` ahora interpola por distancia entre cabeceras (25 km/h solo en el último tramo). `calcularMinutosRestantes` delega al motor (cruce de medianoche). Auto-selección por GPS con distancia en el select. Cartel inteligente que cruza minutos restantes con minutos de caminata. Muestra todos los horarios con scroll al próximo. Fallback por URL `?linea=`.
+- **`horarios.js` (como_llegar)**: interpolación por distancia en lugar de por índice.
+- **`paradas.html` / `como_llegar.html`**: carga `motorHorarios.js`.
+
+### Verificación
+- `paradas.html?linea=linea_a` carga 97 paradas y 5096 registros sin errores.
+- Seleccionar parada muestra todos los horarios con scroll al próximo.
+- `como_llegar.html` sigue funcionando (4 líneas, 1893 locales).
+
+---\n\n## ✅ Cambio 15 — Opción "Ir caminando" con reglas de decisión
 
 ### Tipo de cambio
 Mejora de UX/lógica: recomendar caminar solo cuando realmente conviene.

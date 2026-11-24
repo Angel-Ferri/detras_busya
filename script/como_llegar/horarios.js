@@ -218,8 +218,9 @@ function calcularHorariosDelDiaParada(keyLinea, indiceParada) {
             if (tiempoAntes !== null && tiempoDespues !== null) {
                 // Está entre dos paradas de grilla: se reparte el tiempo según
                 // la distancia que falta para llegar a la siguiente.
-                const fraccion = (indiceParada - anclaAntes.indiceParada)
-                    / (anclaDespues.indiceParada - anclaAntes.indiceParada);
+                const fraccionDist = distanciaDeRutaEntreParadas(linea, anclaAntes.indiceParada, indiceParada)
+                    / Math.max(1, distanciaDeRutaEntreParadas(linea, anclaAntes.indiceParada, anclaDespues.indiceParada));
+                const fraccion = fraccionDist;
                 minutos = Math.round(tiempoAntes + (tiempoDespues - tiempoAntes) * fraccion);
             } else if (tiempoAntes !== null) {
                 // No hay ancla después: se estima el viaje con la velocidad del colectivo.

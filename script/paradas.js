@@ -6,6 +6,7 @@
 let nombreLineaActiva = "";
 let datosParadasProcesados = [];
 let datosGeograficos = null;
+let ubicacionUsuarioParadas = null;
 
 
 
@@ -15,8 +16,39 @@ document.addEventListener("DOMContentLoaded", iniciarParadas);
 // INICIAR
 // ============================================================
 
+function resolverClaveLineaParam(param) {
+    const p = String(param || '').toLowerCase().trim().replace(/\s+/g, '_');
+    const mapa = {
+        'a': 'linea_a', 'linea_a': 'linea_a', 'lineaa': 'linea_a', 'l1': 'linea_a', '1': 'linea_a',
+        'e': 'linea_e', 'linea_e': 'linea_e', 'lineae': 'linea_e', 'l2': 'linea_e', '2': 'linea_e',
+        'este': 'linea_este', 'linea_este': 'linea_este', 'lineaeste': 'linea_este', 'zona_este': 'linea_este',
+        'oeste': 'linea_oeste', 'linea_oeste': 'linea_oeste', 'lineaoeste': 'linea_oeste', 'zona_oeste': 'linea_oeste'
+    };
+    return mapa[p] || null;
+}
+
 async function iniciarParadas() {
-    const dataStr = localStorage.getItem("lineaSeleccionadaData");
+    let dataStr = localStorage.getItem("lineaSeleccionadaData");
+
+    // Fallback por URL: ?linea=lineaa (o A, E, Este, Oeste)
+    if (!dataStr) {
+        const params = new URLSearchParams(window.location.search);
+        const paramLinea = params.get('linea');
+        if (paramLinea) {
+            const clave = resolverClaveLineaParam(paramLinea);
+            if (clave && typeof cargarDatosLineaCompleta === 'function') {
+                try {
+                    const dataCompleta = await cargarDatosLineaCompleta(clave);
+                    if (dataCompleta && dataCompleta.lineas) {
+                        localStorage.setItem('lineaSeleccionadaData', JSON.stringify(dataCompleta));
+                        dataStr = JSON.stringify(dataCompleta);
+                    }
+                } catch (e) {
+                    console.warn('No se pudo cargar la línea desde la URL:', e);
+                }
+            }
+        }
+    }
 
     if (!dataStr) {
         alert("No se encontró información de la línea. Volviendo al inicio.");
@@ -72,6 +104,9 @@ async function iniciarParadas() {
         // console.log("Paradas procesadas:", datosParadasProcesados);
 
         renderizarListaParadas(datosParadasProcesados);
+
+        // Auto-selección por GPS (si está disponible)
+        autoSeleccionarParadaCercana();
 
     } catch (error) {
         console.error("Error fatal al procesar las paradas:", error);
@@ -226,36 +261,14 @@ function procesarTodosLosHorarios(horarios, cabeceras, datosGeo) {
 // ============================================================
 
 function calcularHorariosEstimados(paradas, horariosBase) {
-    const velocidadKmH = 25;
-    const velocidadKmMin = velocidadKmH / 60;
-
-    let resultados = [];
-    let ultimoHorario = null;
-    let ultimaParada = null;
-
-    paradas.forEach((p) => {
-        if (horariosBase[p.nombre]) {
-            ultimoHorario = convertirHoraAMinutos(horariosBase[p.nombre]);
-            ultimaParada = p;
-            resultados.push({ parada: p.nombre, hora: horariosBase[p.nombre] });
-        } else if (ultimoHorario !== null && ultimaParada) {
-            const distanciaKm = calcularDistanciaKm(
-                ultimaParada.lat, ultimaParada.lng,
-                p.lat, p.lng
-            );
-            const tiempoMin = distanciaKm / velocidadKmMin;
-            const horarioEstimado = ultimoHorario + tiempoMin;
-
-            resultados.push({
-                parada: p.nombre,
-                hora: convertirMinutosAHora(horarioEstimado) + " (estimado)"
-            });
-            ultimoHorario = horarioEstimado;
-            ultimaParada = p;
-        }
-    });
-
-    return resultados;
+    const recorrido = (datosGeograficos && datosGeograficos.recorrido && Array.isArray(datosGeograficos.recorrido.coordenadas))
+        ? datosGeograficos.recorrido.coordenadas
+        : (Array.isArray(datosGeograficos && datosGeograficos.recorrido) ? datosGeograficos.recorrido : null);
+    if (typeof MotorHorarios !== 'undefined') {
+        return MotorHorarios.calcularHorariosEstimados(paradas, horariosBase, recorrido);
+    }
+    // Fallback (no debería ocurrir)
+    return paradas.map(p => ({ parada: p.nombre, hora: horariosBase[p.nombre] || null, estimado: !horariosBase[p.nombre] }));
 }
 
 
@@ -311,35 +324,60 @@ function seleccionarParada() {
     titulo.textContent = `Horarios para: ${paradaSeleccionada}`;
 
     const ahora = new Date();
-    const horarios = datosParadasProcesados
+    const todos = datosParadasProcesados
         .filter(p => normalizarTexto(p.parada) === normalizarTexto(paradaSeleccionada))
         .map(p => p.hora)
-        .filter(h => h && h !== "null"); // 🔹 Filtramos los null
+        .filter(h => h && h !== "null");
 
-    lista.innerHTML = horarios.map(h => {
+    // Mostrar TODOS los horarios; el scroll se posiciona en el próximo.
+    lista.innerHTML = todos.map(h => {
         const esEstimado = String(h).includes("(estimado)");
         const minutosRestantes = calcularMinutosRestantes(h, ahora);
         const esProximo = minutosRestantes >= 0 && minutosRestantes <= 30;
 
-        return `<div class="horario-tag ${esEstimado ? "estimado" : ""} ${esProximo ? "proximo" : ""}">
+        return `<div class="horario-tag ${esEstimado ? "estimado" : ""} ${esProximo ? "proximo" : ""}" data-minutos="${minutosRestantes}">
                     ${h}
                 </div>`;
     }).join("");
 
+    if (todos.length === 0) {
+        lista.innerHTML = '<div class="horario-tag">No hay horarios disponibles.</div>';
+    }
+
     section.classList.remove("hidden");
 
-    // Mostrar cartel de recomendación para el próximo válido
-    const proximo = horarios.find(h => calcularMinutosRestantes(h, ahora) >= 0);
+    // Posicionar el scroll en el primer horario próximo (o el primero si ya pasaron todos).
+    let indiceObjetivo = todos.findIndex(h => calcularMinutosRestantes(h, ahora) >= 0);
+    if (indiceObjetivo < 0) indiceObjetivo = 0;
+    const tags = lista.querySelectorAll('.horario-tag');
+    if (tags.length > 0 && tags[indiceObjetivo]) {
+        // Esperar a que el DOM se pinte y luego scrollear.
+        requestAnimationFrame(() => {
+            const el = tags[indiceObjetivo];
+            if (el && typeof el.scrollIntoView === 'function') {
+                el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            }
+        });
+    }
+
+    const proximosTodos = todos.filter(h => calcularMinutosRestantes(h, ahora) >= 0);
+    const proximo = proximosTodos.length ? proximosTodos[0] : null;
     if (proximo) {
         const minutos = calcularMinutosRestantes(proximo, ahora);
-        mostrarCartelRecomendacion(paradaSeleccionada, proximo, minutos);
+        const siguiente = proximosTodos.length > 1 ? proximosTodos[1] : null;
+        mostrarCartelRecomendacion(paradaSeleccionada, proximo, minutos, siguiente, false);
+    } else if (todos.length > 0) {
+        mostrarCartelRecomendacion(paradaSeleccionada, todos[0], calcularMinutosRestantes(todos[0], ahora), null, true);
     }
 }
 
 
 function calcularMinutosRestantes(horaStr, ahora) {
-    const limpio = horaStr.replace("(estimado)", "").trim();
-    const [h, m] = limpio.split(":").map(Number);
+    if (typeof MotorHorarios !== 'undefined') {
+        return MotorHorarios.calcularMinutosRestantes(horaStr, ahora);
+    }
+    const limpio = String(horaStr || '').replace(/\(estimado\)/i, '').trim();
+    const [h, m] = limpio.split(':').map(Number);
     if (isNaN(h) || isNaN(m)) return -1;
     const horaBus = new Date(ahora);
     horaBus.setHours(h, m, 0, 0);
@@ -347,46 +385,78 @@ function calcularMinutosRestantes(horaStr, ahora) {
 }
 
 
-function mostrarCartelRecomendacion(parada, hora, minutos) {
-    // Evitar mostrar cartel si la hora es null o inválida
-    if (!hora || hora === "null" || minutos < 0) return;
+function mostrarCartelRecomendacion(parada, hora, minutos, siguiente, esUltimoDeHoy) {
+    if (!hora || hora === "null") return;
 
-    // 1. Eliminar cualquier cartel anterior para que no se superpongan
     const cartelAnterior = document.querySelector(".cartel-sugerencia");
-    if (cartelAnterior) {
-        cartelAnterior.remove();
+    if (cartelAnterior) cartelAnterior.remove();
+
+    const ahora = new Date();
+    let minutosCaminata = null;
+    if (ubicacionUsuarioParadas) {
+        // buscar geo de la parada
+        const geo = (datosParadasProcesados.find(p => normalizarTexto(p.parada) === normalizarTexto(parada)) || {}).geo;
+        if (geo && Number.isFinite(Number(geo.lat)) && Number.isFinite(Number(geo.lng))) {
+            const d = MotorHorarios.distanciaKm(ubicacionUsuarioParadas.lat, ubicacionUsuarioParadas.lng, Number(geo.lat), Number(geo.lng));
+            minutosCaminata = Math.round(d * 12); // 12 min por km
+        }
     }
 
-    // 2. Crear el nuevo cartel con la parada actualizada
+    let mensaje = '';
+    if (esUltimoDeHoy) {
+        mensaje = `Ya no hay más servicios hoy para <strong>${parada}</strong>.<br>Primer servicio de mañana: <strong>${hora}</strong>.`;
+    } else if (minutos < 0) {
+        mensaje = `El próximo colectivo para <strong>${parada}</strong> ya pasó (a las <strong>${hora}</strong>).`;
+    } else if (minutosCaminata !== null) {
+        if (minutos < minutosCaminata) {
+            const sig = siguiente ? ` — el siguiente es a las <strong>${siguiente}</strong>` : '';
+            mensaje = `⚠️ Sale en <strong>${minutos} min</strong> (tardás <strong>${minutosCaminata} min</strong> caminando, probablemente no llegues)${sig}.`;
+        } else {
+            mensaje = `✅ Salí ahora: pasa en <strong>${minutos} min</strong> (tenés <strong>${minutosCaminata} min</strong> de caminata).`;
+        }
+    } else {
+        mensaje = `El próximo colectivo para <strong>${parada}</strong> llega a las <strong>${hora}</strong>.<br>Te conviene salir ahora: faltan <strong>${minutos} min</strong>.`;
+    }
+
     const cartel = document.createElement("div");
     cartel.className = "cartel-sugerencia";
     cartel.innerHTML = `
         <div class="cartel-contenido">
-            <div class="cartel-icono">🚌</div>
-            <p id="mensaje-recomendacion">
-                El próximo colectivo para <strong>${parada}</strong> llega a las <strong>${hora}</strong>.<br>
-                Te conviene salir ahora: faltan <strong>${minutos} min</strong>.
-            </p>
+            <div class="cartel-icono">🚏</div>
+            <p id="mensaje-recomendacion">${mensaje}</p>
             <button class="cerrar-cartel-btn" onclick="this.parentElement.parentElement.remove()">Cerrar</button>
         </div>
     `;
     document.body.appendChild(cartel);
 
-    // 3. Eliminar automáticamente después de 8 segundos (o el tiempo que prefieras)
-    setTimeout(() => {
-        if (cartel && cartel.parentElement) {
-            cartel.remove();
-        }
-    }, 8000);
+    setTimeout(() => { if (cartel && cartel.parentElement) cartel.remove(); }, 10000);
 }
 
-
-
-
-
-// ============================================================
-// FILTRAR PARADAS EN SELECT
-// ============================================================
+function autoSeleccionarParadaCercana() {
+    const select = document.getElementById("paradas-select");
+    if (!select || !select.options.length) return;
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition((pos) => {
+        ubicacionUsuarioParadas = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        const coordsPorNombre = new Map();
+        (datosParadasProcesados || []).forEach(p => {
+            if (p.geo && !coordsPorNombre.has(p.parada)) coordsPorNombre.set(p.parada, p.geo);
+        });
+        let mejor = null, mejorDist = Infinity;
+        Array.from(select.options).forEach(opt => {
+            const g = coordsPorNombre.get(opt.value);
+            if (!g) return;
+            const d = MotorHorarios.distanciaKm(ubicacionUsuarioParadas.lat, ubicacionUsuarioParadas.lng, Number(g.lat), Number(g.lng));
+            if (d < mejorDist) { mejorDist = d; mejor = opt.value; }
+            // mostrar distancia en el texto
+            opt.textContent = opt.value + ' (a ' + Math.round(d * 1000) + ' m)';
+        });
+        if (mejor) {
+            select.value = mejor;
+            seleccionarParada();
+        }
+    }, () => { /* silencio */ }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 });
+}
 
 function filtrarParadas() {
     const input = document.getElementById("buscador-paradas");
